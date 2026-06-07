@@ -2,7 +2,7 @@
 #include <ESP32Servo.h>
 
 #define SERVO_PIN 25
-#define BUZZER    12  // đổi từ 33 sang 12 — tránh xung đột RELAY_3
+#define BUZZER    4  // đổi từ 12 sang 4, tránh xung đột R1
 #define RELAY_1   26
 #define RELAY_2   32
 #define RELAY_3   33  // giờ không còn trùng BUZZER
@@ -57,8 +57,10 @@ void setRelay(int ch, bool on) {
 }
 
 void alertBuzzer() {
+  Serial.println("BUZZER: ON");
   for (int i = 0; i < 2; i++) {
     digitalWrite(BUZZER, HIGH); delay(200);
     digitalWrite(BUZZER, LOW);  delay(200);
   }
+  Serial.println("BUZZER: OFF");
 }

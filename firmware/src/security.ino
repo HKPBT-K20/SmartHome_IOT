@@ -9,7 +9,7 @@
 MFRC522 rfid(SS_PIN, RST_PIN);
 
 String validUIDs[] = {"A1B2C3D4", "E5F6G7H8"};
-int uidCount = 2;
+int uidCount = sizeof(validUIDs) / sizeof(validUIDs[0]);
 
 // ── KEYPAD ────────────────────────────────────────
 const byte ROWS = 4, COLS = 4;
@@ -20,7 +20,7 @@ char keys[ROWS][COLS] = {
   {'*','0','#','D'}
 };
 byte rowPins[ROWS] = {12, 15, 2,  0};
-byte colPins[COLS] = {4,  16, 17, 5};
+byte colPins[COLS] = {22,  16, 17, 21};
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 String correctPIN    = "123456";
