@@ -1,1 +1,1 @@
-// TV1: LCD hiển thị
+// Khuyên: LCD hiển thị
