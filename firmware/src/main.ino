@@ -14,4 +14,5 @@ void loop() {
   checkRFID();
   checkKeypad();
   checkPIR(currentHour); // giờ thật từ Khuyên
+  updateDoor();
 }

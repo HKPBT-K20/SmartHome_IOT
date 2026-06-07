@@ -8,7 +8,6 @@
 #define RST_PIN 27
 MFRC522 rfid(SS_PIN, RST_PIN);
 
-// Danh sách thẻ hợp lệ — thêm UID thẻ thật vào đây
 String validUIDs[] = {"A1B2C3D4", "E5F6G7H8"};
 int uidCount = 2;
 
@@ -24,19 +23,27 @@ byte rowPins[ROWS] = {12, 15, 2,  0};
 byte colPins[COLS] = {4,  16, 17, 5};
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
-String correctPIN = "1234";
-String inputPIN   = "";
+String correctPIN    = "123456";
+String inputPIN      = "";
+int    wrongAttempts = 0;
+bool   isLocked      = false;
+unsigned long lockedUntil = 0;
 
 // ── ACCESS LOG ────────────────────────────────────
-AccessLog lastLog; // Bảo đọc cái này để push lên Firebase
+AccessLog lastLog;
 bool newLogAvailable = false;
 
-// ── RFID CHECK ────────────────────────────────────
+// ── RFID ──────────────────────────────────────────
+void setupSecurity() {
+  SPI.begin();
+  rfid.PCD_Init();
+  Serial.println("Security module ready");
+}
+
 void checkRFID() {
   if (!rfid.PICC_IsNewCardPresent()) return;
   if (!rfid.PICC_ReadCardSerial())   return;
 
-  // Đọc UID
   String uid = "";
   for (byte i = 0; i < rfid.uid.size; i++) {
     if (rfid.uid.uidByte[i] < 0x10) uid += "0";
@@ -44,18 +51,18 @@ void checkRFID() {
   }
   uid.toUpperCase();
 
-  // Kiểm tra whitelist
   bool granted = false;
   for (int i = 0; i < uidCount; i++) {
     if (uid == validUIDs[i]) { granted = true; break; }
   }
 
-  // Ghi log
+  Serial.println("RFID: " + uid + " → " + (granted ? "GRANTED" : "DENIED"));
+
   uid.toCharArray(lastLog.uid, 20);
   strcpy(lastLog.method, "RFID");
-  strcpy(lastLog.time, "00:00:00 01/01/25"); // TV1 sẽ cung cấp giờ thật sau
-  lastLog.granted = granted;
-  newLogAvailable = true;
+  strcpy(lastLog.time, "00:00:00 01/01/25");
+  lastLog.granted  = granted;
+  newLogAvailable  = true;
 
   if (granted) openDoor();
   else         alertBuzzer();
@@ -64,14 +71,38 @@ void checkRFID() {
   rfid.PCD_StopCrypto1();
 }
 
-// ── KEYPAD CHECK ──────────────────────────────────
+// ── KEYPAD ────────────────────────────────────────
 void checkKeypad() {
+  // Kiểm tra lockout
+  if (isLocked) {
+    if (millis() < lockedUntil) {
+      Serial.println("LOCKED — wait " + String((lockedUntil - millis()) / 1000) + "s");
+      return;
+    } else {
+      isLocked      = false;
+      wrongAttempts = 0;
+      Serial.println("Lockout lifted");
+    }
+  }
+
   char key = keypad.getKey();
   if (!key) return;
 
   if (key == '#') {
-    // Nhấn # để xác nhận
     bool granted = (inputPIN == correctPIN);
+
+    if (!granted) {
+      wrongAttempts++;
+      Serial.println("Wrong PIN (" + String(wrongAttempts) + "/3)");
+      if (wrongAttempts >= 3) {
+        isLocked    = true;
+        lockedUntil = millis() + 30000; // khóa 30 giây
+        Serial.println("Too many attempts — locked 30s");
+        alertBuzzer();
+        inputPIN = "";
+        return;
+      }
+    }
 
     strncpy(lastLog.uid, inputPIN.c_str(), 20);
     strcpy(lastLog.method, "KEYPAD");
@@ -79,25 +110,33 @@ void checkKeypad() {
     lastLog.granted = granted;
     newLogAvailable = true;
 
-    if (granted) openDoor();
+    Serial.println("PIN: " + inputPIN + " → " + (granted ? "GRANTED" : "DENIED"));
+
+    if (granted) { wrongAttempts = 0; openDoor(); }
     else         alertBuzzer();
 
-    inputPIN = ""; // reset sau khi xác nhận
+    inputPIN = "";
   }
   else if (key == '*') {
-    // Nhấn * để xóa
     inputPIN = "";
     Serial.println("PIN cleared");
   }
   else {
-    inputPIN += key;
-    Serial.println("Input: " + inputPIN);
+    // Giới hạn 6 ký tự
+    if (inputPIN.length() < 6) {
+      inputPIN += key;
+      Serial.println("Input: " + String(inputPIN.length()) + "/6 digits");
+    } else {
+      Serial.println("Max 6 digits — press # to confirm or * to clear");
+    }
   }
 }
 
-// ── PIR CHECK ─────────────────────────────────────
+// ── PIR ───────────────────────────────────────────
 #define PIR_PIN 13
 volatile bool pirTriggered = false;
+unsigned long lastPIRAlert = 0;
+#define PIR_COOLDOWN 30000 // 30 giây
 
 void IRAM_ATTR onPIR() {
   pirTriggered = true;
@@ -112,10 +151,15 @@ void checkPIR(int currentHour) {
   if (!pirTriggered) return;
   pirTriggered = false;
 
-  // Chỉ cảnh báo ban đêm 22:00 – 06:00
+  // Cooldown 30 giây
+  if (millis() - lastPIRAlert < PIR_COOLDOWN) {
+    Serial.println("PIR: cooldown active, skipping");
+    return;
+  }
+
   if (currentHour >= 22 || currentHour < 6) {
     Serial.println("PIR: Intruder detected!");
     alertBuzzer();
-    // Bảo sẽ thêm push notification Firebase ở đây sau
+    lastPIRAlert = millis();
   }
 }
