@@ -1,1 +1,0 @@
-// Firebase init, realtime listener
