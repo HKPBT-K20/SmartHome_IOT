@@ -7,12 +7,6 @@ import {
     update,
     remove
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-import {
-    getAuth,
-    onAuthStateChanged,
-    signInWithEmailAndPassword,
-    signOut
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // 1. Firebase config
 const firebaseConfig = {
@@ -27,7 +21,31 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const auth = getAuth(app);
+const MOCK_ACCOUNT = {
+    email: 'quocbao.nguyen16102006@gmail.com',
+    password: '#barooinnit1610',
+    displayName: 'Quoc Bao Demo'
+};
+const MOCK_SESSION_KEY = 'smarthomeMockSession';
+
+function getMockSession() {
+    try {
+        return JSON.parse(localStorage.getItem(MOCK_SESSION_KEY) || 'null');
+    } catch (error) {
+        return null;
+    }
+}
+
+function setMockSession(user) {
+    localStorage.setItem(MOCK_SESSION_KEY, JSON.stringify({
+        email: user.email,
+        displayName: user.displayName
+    }));
+}
+
+function clearMockSession() {
+    localStorage.removeItem(MOCK_SESSION_KEY);
+}
 
 // ==========================================
 // UI HELPERS
@@ -381,17 +399,27 @@ if (loginForm) {
         }
 
         loginButton.disabled = true;
-        setLoginStatus('Đang đăng nhập...', 'info');
+        setLoginStatus('Đang kiểm tra tài khoản demo...', 'info');
 
         try {
-            await signInWithEmailAndPassword(auth, email, password);
+            const isValidUser = email.toLowerCase() === MOCK_ACCOUNT.email.toLowerCase() && password === MOCK_ACCOUNT.password;
+            if (!isValidUser) {
+                throw new Error('auth/invalid-credential');
+            }
+
+            setMockSession({
+                email: MOCK_ACCOUNT.email,
+                displayName: MOCK_ACCOUNT.displayName
+            });
+            setAppLocked(false);
+            if (authUserLabel) {
+                authUserLabel.innerText = MOCK_ACCOUNT.displayName;
+            }
             setLoginStatus('Đăng nhập thành công.', 'success');
-            showToast('Đăng nhập thành công', `Xin chào ${email}.`, 'success');
+            showToast('Đăng nhập thành công', `Xin chào ${MOCK_ACCOUNT.displayName}.`, 'success');
         } catch (error) {
             console.error('Đăng nhập thất bại:', error);
-            const message = error.code === 'auth/invalid-credential'
-                ? 'Sai email hoặc mật khẩu.'
-                : 'Không thể đăng nhập, kiểm tra Firebase Auth.';
+            const message = 'Sai email hoặc mật khẩu demo.';
             setLoginStatus(message, 'error');
             showToast('Đăng nhập thất bại', message, 'error');
         } finally {
@@ -402,34 +430,40 @@ if (loginForm) {
 
 if (logoutButton) {
     logoutButton.addEventListener('click', async () => {
-        try {
-            await signOut(auth);
-            showToast('Đã đăng xuất', 'Phiên làm việc đã kết thúc.', 'info');
-        } catch (error) {
-            console.error('Đăng xuất thất bại:', error);
-            showToast('Không thể đăng xuất', 'Vui lòng thử lại.', 'error');
-        }
-    });
-}
-
-onAuthStateChanged(auth, user => {
-    const locked = !user;
-    setAppLocked(locked);
-    if (authUserLabel) {
-        authUserLabel.innerText = user?.email || 'Chưa đăng nhập';
-    }
-
-    if (locked) {
-        setLoginStatus('Đăng nhập để sử dụng dashboard.', 'info');
+        clearMockSession();
+        loginButton.disabled = false;
         if (loginPassword) {
             loginPassword.value = '';
         }
-    } else {
-        if (loginEmail) {
-            loginEmail.value = user.email || '';
+        setAppLocked(true);
+        setLoginStatus('Đăng xuất thành công. Dùng tài khoản demo để vào lại.', 'info');
+        if (authUserLabel) {
+            authUserLabel.innerText = 'Chưa đăng nhập';
         }
+        showToast('Đã đăng xuất', 'Phiên demo đã kết thúc.', 'info');
+    });
+}
+
+const existingMockSession = getMockSession();
+if (existingMockSession?.email === MOCK_ACCOUNT.email) {
+    setAppLocked(false);
+    if (authUserLabel) {
+        authUserLabel.innerText = existingMockSession.displayName || existingMockSession.email;
     }
-});
+    if (loginEmail) {
+        loginEmail.value = existingMockSession.email;
+    }
+    setLoginStatus('Đang mở dashboard demo...', 'success');
+} else {
+    setAppLocked(true);
+    if (authUserLabel) {
+        authUserLabel.innerText = 'Chưa đăng nhập';
+    }
+    setLoginStatus(`Tài khoản demo: ${MOCK_ACCOUNT.email}`, 'info');
+    if (loginEmail && !loginEmail.value) {
+        loginEmail.value = MOCK_ACCOUNT.email;
+    }
+}
 
 navButtons.forEach(btn => {
     btn.addEventListener('click', () => {
