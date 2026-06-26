@@ -172,12 +172,12 @@
                         class="w-full rounded-2xl bg-sky-600 hover:bg-sky-500 py-3 font-semibold text-white transition shadow-lg shadow-sky-600/20">
                     Đăng nhập
                 </button>
-                <p id="login-status" class="text-sm text-slate-400 text-center">Tài khoản demo: quocbao.nguyen16102006@gmail.com</p>
+                <p id="login-status" class="text-sm text-slate-400 text-center">Tài khoản demo: quocbao.nguyen16102006@gmail.com | Mật khẩu: demo1610</p>
             </form>
         </div>
     </div>
 
-    <div id="app-shell" class="flex-1 flex flex-col overflow-hidden hidden">
+    <div id="app-shell" class="w-full h-full flex flex-row overflow-hidden hidden">
     <div id="sidebar" class="w-64 bg-slate-950/95 border-r border-slate-800 flex flex-col justify-between hidden md:flex shadow-[0_0_60px_rgba(15,23,42,0.25)]">
         <div class="p-5">
             <h1 class="text-2xl font-bold text-sky-400 flex items-center gap-3">
@@ -203,7 +203,7 @@
         </div>
     </div>
 
-    <div class="flex-1 flex flex-col overflow-hidden">
+    <div class="flex-1 min-w-0 flex flex-col overflow-hidden">
         <header class="bg-slate-950/90 border-b border-slate-800 px-6 py-4 flex justify-between items-center sticky top-0 z-10 backdrop-blur-xl">
             <div class="flex items-center gap-3">
                 <button id="sidebar-toggle" class="text-slate-200 bg-slate-800/80 hover:bg-slate-700 px-3 py-2 rounded-full transition hidden md:flex items-center gap-2">
@@ -450,7 +450,10 @@
 
             <div id="page-security" class="page-content space-y-6 hidden">
                 <div class="panel-card p-6 rounded-[28px] border border-slate-700/60 shadow-[0_25px_60px_rgba(15,23,42,0.2)]">
-                    <h3 class="text-lg font-semibold text-white mb-4"><i class="fa-solid fa-user-shield text-rose-400 mr-2"></i>Cài đặt chế độ kích hoạt chống trộm</h3>
+                    <div class="flex items-center justify-between gap-3 mb-4">
+                        <h3 class="text-lg font-semibold text-white"><i class="fa-solid fa-user-shield text-rose-400 mr-2"></i>Cài đặt chế độ kích hoạt chống trộm</h3>
+                        <span id="security-demo-badge" class="hidden px-3 py-1 rounded-full bg-amber-500/15 border border-amber-400/30 text-amber-300 text-xs font-semibold">DEMO MODE</span>
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div class="p-4 glass-panel border border-slate-700/50 rounded-3xl space-y-4">
                             <p class="font-medium text-white">Chế độ hoạt động</p>

@@ -21,12 +21,16 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const USE_MOCK_DEMO = Object.values(firebaseConfig).some(value => typeof value === 'string' && value.includes('YOUR_'));
 const MOCK_ACCOUNT = {
     email: 'quocbao.nguyen16102006@gmail.com',
-    password: '#barooinnit1610',
+    password: 'demo1610',
     displayName: 'Quoc Bao Demo'
 };
+const MOCK_PASSWORD_ALIASES = ['demo1610', '#barooinnit1610', 'barooinnit1610', '1610'];
 const MOCK_SESSION_KEY = 'smarthomeMockSession';
+const MOCK_SCHEDULES_KEY = 'smarthomeMockSchedules';
+const MOCK_SECURITY_KEY = 'smarthomeMockSecurity';
 
 function getMockSession() {
     try {
@@ -45,6 +49,38 @@ function setMockSession(user) {
 
 function clearMockSession() {
     localStorage.removeItem(MOCK_SESSION_KEY);
+}
+
+function getMockSchedules() {
+    try {
+        return JSON.parse(localStorage.getItem(MOCK_SCHEDULES_KEY) || '{}') || {};
+    } catch (error) {
+        return {};
+    }
+}
+
+function setMockSchedules(schedules) {
+    localStorage.setItem(MOCK_SCHEDULES_KEY, JSON.stringify(schedules));
+}
+
+function getMockSecurity() {
+    try {
+        return JSON.parse(localStorage.getItem(MOCK_SECURITY_KEY) || 'null') || {
+            mode: 'always',
+            alarm_status: false,
+            motion_detected: false
+        };
+    } catch (error) {
+        return {
+            mode: 'always',
+            alarm_status: false,
+            motion_detected: false
+        };
+    }
+}
+
+function setMockSecurity(security) {
+    localStorage.setItem(MOCK_SECURITY_KEY, JSON.stringify(security));
 }
 
 // ==========================================
@@ -402,7 +438,7 @@ if (loginForm) {
         setLoginStatus('Đang kiểm tra tài khoản demo...', 'info');
 
         try {
-            const isValidUser = email.toLowerCase() === MOCK_ACCOUNT.email.toLowerCase() && password === MOCK_ACCOUNT.password;
+            const isValidUser = email.toLowerCase() === MOCK_ACCOUNT.email.toLowerCase() && MOCK_PASSWORD_ALIASES.includes(password);
             if (!isValidUser) {
                 throw new Error('auth/invalid-credential');
             }
@@ -545,9 +581,14 @@ relayChannels.forEach(ch => {
         return;
     }
 
-    onValue(ref(db, `schedules/${ch}`), snapshot => {
-        setScheduleUi(ch, snapshot.val());
-    });
+    if (USE_MOCK_DEMO) {
+        const mockSchedules = getMockSchedules();
+        setScheduleUi(ch, mockSchedules[ch] || null);
+    } else {
+        onValue(ref(db, `schedules/${ch}`), snapshot => {
+            setScheduleUi(ch, snapshot.val());
+        });
+    }
 
     saveBtn.addEventListener('click', async () => {
         const onTime = timeOnInput.value.trim();
@@ -567,16 +608,24 @@ relayChannels.forEach(ch => {
         const offMinutes = toMinutes(offTime);
         const overnight = offMinutes <= onMinutes;
         const durationMinutes = (offMinutes - onMinutes + 24 * 60) % (24 * 60);
+        const payload = {
+            on_time: onTime,
+            off_time: offTime,
+            enabled: true,
+            mode: overnight ? 'overnight' : 'daily',
+            duration_minutes: durationMinutes,
+            updated_at: new Date().toISOString()
+        };
 
         try {
-            await update(ref(db, `schedules/${ch}`), {
-                on_time: onTime,
-                off_time: offTime,
-                enabled: true,
-                mode: overnight ? 'overnight' : 'daily',
-                duration_minutes: durationMinutes,
-                updated_at: new Date().toISOString()
-            });
+            if (USE_MOCK_DEMO) {
+                const schedules = getMockSchedules();
+                schedules[ch] = payload;
+                setMockSchedules(schedules);
+                setScheduleUi(ch, payload);
+            } else {
+                await update(ref(db, `schedules/${ch}`), payload);
+            }
 
             showToast(
                 'Đã lưu lịch hẹn giờ',
@@ -603,9 +652,26 @@ relayChannels.forEach(ch => {
         toggleBtn.disabled = true;
 
         try {
-            await update(ref(db, `schedules/${ch}`), {
-                enabled: nextEnabled
-            });
+            if (USE_MOCK_DEMO) {
+                const schedules = getMockSchedules();
+                const currentSchedule = schedules[ch] || {
+                    on_time: timeOnInput.value.trim(),
+                    off_time: timeOffInput.value.trim(),
+                    mode: 'daily',
+                    duration_minutes: null
+                };
+                schedules[ch] = {
+                    ...currentSchedule,
+                    enabled: nextEnabled,
+                    updated_at: new Date().toISOString()
+                };
+                setMockSchedules(schedules);
+                setScheduleUi(ch, schedules[ch]);
+            } else {
+                await update(ref(db, `schedules/${ch}`), {
+                    enabled: nextEnabled
+                });
+            }
             showToast(
                 nextEnabled ? 'Đã bật hẹn giờ' : 'Đã tắt hẹn giờ',
                 `Thiết bị ${ch.toUpperCase()} đã được ${nextEnabled ? 'kích hoạt' : 'dừng'} chế độ tự động.`,
@@ -732,6 +798,161 @@ if (btnToggleAlarm) {
             showToast('Không đổi được trạng thái còi', 'Kiểm tra Firebase config hoặc quyền ghi.', 'error');
         }
     });
+}
+
+if (USE_MOCK_DEMO) {
+    const replaceButton = (buttonId) => {
+        const original = document.getElementById(buttonId);
+        if (!original) {
+            return null;
+        }
+
+        const clone = original.cloneNode(true);
+        original.parentNode.replaceChild(clone, original);
+        return clone;
+    };
+
+    const mockBtnSaveSecurityMode = replaceButton('btn-save-security-mode');
+    const mockBtnClearAlarm = replaceButton('btn-clear-alarm');
+    const mockBtnToggleAlarm = replaceButton('btn-toggle-alarm');
+
+    const applyMockSecurity = () => {
+        const securityBadge = document.getElementById('security-demo-badge');
+        if (securityBadge) {
+            securityBadge.classList.remove('hidden');
+        }
+        const state = getMockSecurity();
+        const motionBox = document.getElementById('div-motion-bg');
+        const motionIcon = document.getElementById('icon-motion');
+        const motionLabel = document.getElementById('lbl-motion-status');
+        const alarmLabel = document.getElementById('lbl-alarm-status');
+        const alarmButton = document.getElementById('btn-toggle-alarm');
+        const clearAlarmButton = document.getElementById('btn-clear-alarm');
+        const checkedRadio = document.querySelector(`input[name="security-mode"][value="${state.mode || 'always'}"]`);
+
+        const motionDetected = Boolean(state.motion_detected);
+        const alarmActive = Boolean(state.alarm_status);
+
+        if (motionBox) {
+            motionBox.className = motionDetected
+                ? 'p-4 rounded-3xl bg-rose-500/15 flex items-center gap-4 border border-rose-500/30 animate-pulse'
+                : 'p-4 rounded-3xl bg-slate-900/70 flex items-center gap-4 border border-slate-700/60';
+        }
+        if (motionIcon) {
+            motionIcon.className = motionDetected ? 'text-2xl text-rose-400' : 'text-2xl text-slate-400';
+        }
+        if (motionLabel) {
+            motionLabel.innerText = motionDetected ? 'CẢNH BÁO: Phát hiện chuyển động' : 'Không phát hiện đột nhập';
+            motionLabel.className = motionDetected ? 'font-bold text-rose-300' : 'text-sm text-slate-400';
+        }
+        if (alarmButton) {
+            alarmButton.innerText = alarmActive ? 'CÒI ĐANG HÚ (BẤM ĐỂ TẮT)' : 'HỆ THỐNG AN TOÀN';
+            alarmButton.className = alarmActive
+                ? 'w-full py-3 bg-rose-600 text-white font-bold rounded-2xl transition shadow-lg shadow-rose-600/25 animate-bounce'
+                : 'w-full py-3 bg-slate-800 text-slate-300 font-bold rounded-2xl cursor-pointer hover:bg-slate-700 transition';
+            alarmButton.dataset.active = alarmActive ? 'true' : 'false';
+        }
+        if (alarmLabel) {
+            alarmLabel.innerText = alarmActive ? 'Hệ thống còi hú: ĐANG BẬT' : 'Hệ thống còi hú: Bình thường';
+            alarmLabel.className = alarmActive ? 'text-xs text-rose-300 font-semibold mt-1' : 'text-xs text-slate-500 mt-1';
+        }
+        if (clearAlarmButton) {
+            clearAlarmButton.classList.toggle('hidden', !alarmActive);
+        }
+        if (checkedRadio) {
+            checkedRadio.checked = true;
+        }
+    };
+
+    if (mockBtnSaveSecurityMode) {
+        mockBtnSaveSecurityMode.addEventListener('click', () => {
+            const selectedRadio = document.querySelector('input[name="security-mode"]:checked');
+            if (!selectedRadio) {
+                showToast('Chưa chọn chế độ', 'Hãy chọn một chế độ bảo vệ trước khi cập nhật.', 'warning');
+                return;
+            }
+
+            const nextSecurity = {
+                ...getMockSecurity(),
+                mode: selectedRadio.value
+            };
+            setMockSecurity(nextSecurity);
+            applyMockSecurity();
+            showToast('Đã cập nhật chế độ an ninh', 'Chế độ bảo vệ demo đã được lưu.', 'success');
+        });
+    }
+
+    if (mockBtnClearAlarm) {
+        mockBtnClearAlarm.addEventListener('click', () => {
+            const nextSecurity = {
+                ...getMockSecurity(),
+                alarm_status: false,
+                motion_detected: false
+            };
+            setMockSecurity(nextSecurity);
+            applyMockSecurity();
+            showToast('Đã tắt còi báo động', 'Tín hiệu khẩn cấp demo đã được reset.', 'success');
+        });
+    }
+
+    if (mockBtnToggleAlarm) {
+        mockBtnToggleAlarm.addEventListener('click', () => {
+            const current = getMockSecurity();
+            const nextSecurity = {
+                ...current,
+                alarm_status: !Boolean(current.alarm_status)
+            };
+            setMockSecurity(nextSecurity);
+            applyMockSecurity();
+            showToast(
+                nextSecurity.alarm_status ? 'Đã kích hoạt còi thử' : 'Đã tắt còi thử',
+                nextSecurity.alarm_status ? 'Dùng để demo âm báo động.' : 'Còi báo động đã trở về trạng thái bình thường.',
+                nextSecurity.alarm_status ? 'warning' : 'info'
+            );
+        });
+    }
+
+    applyMockSecurity();
+}
+
+function renderSecurityUi(security) {
+    const state = security || {};
+    const motionDetected = Boolean(state.motion_detected);
+    const alarmActive = Boolean(state.alarm_status);
+    const mode = state.mode || 'always';
+
+    if (divMotionBg) {
+        divMotionBg.className = motionDetected
+            ? 'p-4 rounded-3xl bg-rose-500/15 flex items-center gap-4 border border-rose-500/30 animate-pulse'
+            : 'p-4 rounded-3xl bg-slate-900/70 flex items-center gap-4 border border-slate-700/60';
+    }
+    if (iconMotion) {
+        iconMotion.className = motionDetected ? 'text-2xl text-rose-400' : 'text-2xl text-slate-400';
+    }
+    if (lblMotionStatus) {
+        lblMotionStatus.innerText = motionDetected ? 'CẢNH BÁO: Phát hiện chuyển động' : 'Không phát hiện đột nhập';
+        lblMotionStatus.className = motionDetected ? 'font-bold text-rose-300' : 'text-sm text-slate-400';
+    }
+
+    if (btnToggleAlarm) {
+        btnToggleAlarm.innerText = alarmActive ? 'CÒI ĐANG HÚ (BẤM ĐỂ TẮT)' : 'HỆ THỐNG AN TOÀN';
+        btnToggleAlarm.className = alarmActive
+            ? 'w-full py-3 bg-rose-600 text-white font-bold rounded-2xl transition shadow-lg shadow-rose-600/25 animate-bounce'
+            : 'w-full py-3 bg-slate-800 text-slate-300 font-bold rounded-2xl cursor-pointer hover:bg-slate-700 transition';
+        btnToggleAlarm.dataset.active = alarmActive ? 'true' : 'false';
+    }
+    if (lblAlarmStatus) {
+        lblAlarmStatus.innerText = alarmActive ? 'Hệ thống còi hú: ĐANG BẬT' : 'Hệ thống còi hú: Bình thường';
+        lblAlarmStatus.className = alarmActive ? 'text-xs text-rose-300 font-semibold mt-1' : 'text-xs text-slate-500 mt-1';
+    }
+    if (btnClearAlarm) {
+        btnClearAlarm.classList.toggle('hidden', !alarmActive);
+    }
+
+    const checkedRadio = document.querySelector(`input[name="security-mode"][value="${mode}"]`);
+    if (checkedRadio) {
+        checkedRadio.checked = true;
+    }
 }
 
 // ==========================================
