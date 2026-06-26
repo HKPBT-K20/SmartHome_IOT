@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { getDatabase, ref, onValue, set, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 // 1. Cấu hình Firebase của dự án (Thay thông số của bạn vào đây)
 const firebaseConfig = {
@@ -176,23 +176,55 @@ relayChannels.forEach(ch => {
     });
 
     // Sự kiện lưu mốc thời gian hẹn giờ
-    saveBtn.addEventListener('click', () => {
+    saveBtn.addEventListener('click', async () => {
         const onTime = timeOnInput.value;
         const offTime = timeOffInput.value;
         if (!onTime || !offTime) {
             alert("Vui lòng điền đủ mốc thời gian Bật và Tắt!");
             return;
         }
-        set(ref(db, `schedules/${ch}/on_time`), onTime);
-        set(ref(db, `schedules/${ch}/off_time`), offTime);
-        set(ref(db, `schedules/${ch}/enabled`), true); // Mặc định kích hoạt sau khi lưu
-        alert(`Đã cập nhật lịch trình tự động cho thiết bị này!`);
+        try {
+            await update(ref(db, `schedules/${ch}`), {
+                on_time: onTime,
+                off_time: offTime,
+                enabled: true // Mặc định kích hoạt sau khi lưu
+            });
+            alert(`Đã cập nhật lịch trình tự động cho thiết bị này!`);
+        } catch (error) {
+            console.error(`Không thể lưu lịch trình cho ${ch}:`, error);
+            alert("Không lưu được lịch trình. Kiểm tra lại Firebase config hoặc quyền ghi.");
+        }
     });
 
     // Kích hoạt nhanh / Hủy nhanh chế độ hẹn giờ
-    toggleBtn.addEventListener('click', () => {
+    toggleBtn.addEventListener('click', async () => {
         const isCurrentlyEnabled = toggleBtn.dataset.enabled === "true";
-        set(ref(db, `schedules/${ch}/enabled`), !isCurrentlyEnabled);
+        const nextEnabled = !isCurrentlyEnabled;
+        const previousText = toggleBtn.innerText;
+        const previousLabel = schLabel.innerText;
+
+        toggleBtn.disabled = true;
+        toggleBtn.innerText = "Đang xử lý...";
+
+        try {
+            await update(ref(db, `schedules/${ch}`), {
+                enabled: nextEnabled
+            });
+            toggleBtn.dataset.enabled = nextEnabled ? "true" : "false";
+            toggleBtn.innerText = nextEnabled ? "Tắt hẹn giờ" : "Bật hẹn giờ";
+            schLabel.innerText = nextEnabled
+                ? `Tự động: Bật (${timeOnInput.value || "--:--"} - ${timeOffInput.value || "--:--"})`
+                : "Tự động: Đang tắt";
+        } catch (error) {
+            console.error(`Không thể đổi trạng thái hẹn giờ cho ${ch}:`, error);
+            schLabel.innerText = previousLabel;
+            alert("Không đổi được trạng thái hẹn giờ. Kiểm tra lại Firebase config hoặc quyền ghi.");
+        } finally {
+            toggleBtn.disabled = false;
+            if (toggleBtn.innerText === "Đang xử lý...") {
+                toggleBtn.innerText = previousText;
+            }
+        }
     });
 });
 
