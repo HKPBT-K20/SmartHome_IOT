@@ -1,1 +1,0 @@
-// Khuyên: LCD hiển thị

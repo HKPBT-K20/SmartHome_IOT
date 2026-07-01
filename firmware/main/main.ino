@@ -8,11 +8,16 @@ void setup() {
   rfid.PCD_Init();
   setupPIR();
   setupActuator();
+  setupSensors();
+  setupRTC();
+   setupDisplay();
 }
 
 void loop() {
+  updateTime();
   checkRFID();
   checkKeypad();
   checkPIR(currentHour); // giờ thật từ Khuyên
   updateDoor();
+  updateDisplay();
 }
