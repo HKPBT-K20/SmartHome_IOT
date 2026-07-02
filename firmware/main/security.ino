@@ -60,7 +60,7 @@ void checkRFID() {
 
   uid.toCharArray(lastLog.uid, 20);
   strcpy(lastLog.method, "RFID");
-  strcpy(lastLog.time, "00:00:00 01/01/25");
+  getTimeString(lastLog.time);
   lastLog.granted  = granted;
   newLogAvailable  = true;
 
@@ -106,7 +106,7 @@ void checkKeypad() {
 
     strncpy(lastLog.uid, inputPIN.c_str(), 20);
     strcpy(lastLog.method, "KEYPAD");
-    strcpy(lastLog.time, "00:00:00 01/01/25");
+    getTimeString(lastLog.time);
     lastLog.granted = granted;
     newLogAvailable = true;
 
