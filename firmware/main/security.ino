@@ -89,17 +89,46 @@ void checkRFID() {
 
   Serial.println("RFID: " + uid + " → " + (granted ? "GRANTED" : "DENIED"));
 
-  uid.toCharArray(lastLog.uid, 20);
-  strcpy(lastLog.method, "RFID");
-  getTimeString(lastLog.time);
-  lastLog.granted = granted;
-  newLogAvailable = true;
+  fillAccessLog("RFID", "RFID", uid.c_str(), granted);
 
   if (granted) openDoor();
   else         alertBuzzer();
 
   rfid.PICC_HaltA();
   rfid.PCD_StopCrypto1();
+}
+
+// ── HELPER POPULATE LOG ───────────────────────────────────────
+void fillAccessLog(const char* authMethod, const char* identityType, const char* identityValue, bool granted) {
+  struct tm t;
+  if (getLocalTime(&t) && t.tm_year > 120) {
+    sprintf(lastLog.displayTime, "%02d/%02d/%04d %02d:%02d:%02d",
+            t.tm_mday, t.tm_mon + 1, t.tm_year + 1900,
+            t.tm_hour, t.tm_min, t.tm_sec);
+    lastLog.createdAt = (uint64_t)mktime(&t) * 1000ULL;
+  } else {
+    getTimeString(lastLog.displayTime);
+    lastLog.createdAt = (uint64_t)time(NULL) * 1000ULL;
+    if (lastLog.createdAt < 1000000000000ULL) {
+      lastLog.createdAt = 1719990000123ULL; // Fallback timestamp
+    }
+  }
+
+  strncpy(lastLog.authMethod,    authMethod,    sizeof(lastLog.authMethod) - 1);
+  strncpy(lastLog.identityType,  identityType,  sizeof(lastLog.identityType) - 1);
+  strncpy(lastLog.identityValue, identityValue, sizeof(lastLog.identityValue) - 1);
+
+  if (granted) {
+    strcpy(lastLog.actorId, "user_001");
+    strcpy(lastLog.actorName, "Vo Nguyen Thien Phu");
+    strcpy(lastLog.result, "Success");
+  } else {
+    strcpy(lastLog.actorId, "unknown");
+    strcpy(lastLog.actorName, "Unknown User");
+    strcpy(lastLog.result, "Failed");
+  }
+  lastLog.granted = granted;
+  newLogAvailable = true;
 }
 
 // ── KEYPAD ────────────────────────────────────────────────────
@@ -128,12 +157,7 @@ void checkKeypad() {
         lockedUntil = millis() + 30000;
         Serial.println("Too many attempts — locked 30s");
 
-        // Ghi log trước khi return — sự kiện bị khóa phải có trong Firebase
-        strncpy(lastLog.uid, inputPIN.c_str(), 20);
-        strcpy(lastLog.method, "KEYPAD");
-        getTimeString(lastLog.time);
-        lastLog.granted = false;
-        newLogAvailable = true;
+        fillAccessLog("KEYPAD", "PIN", inputPIN.c_str(), false);
 
         alertBuzzer();
         inputPIN = "";
@@ -141,11 +165,7 @@ void checkKeypad() {
       }
     }
 
-    strncpy(lastLog.uid, inputPIN.c_str(), 20);
-    strcpy(lastLog.method, "KEYPAD");
-    getTimeString(lastLog.time);
-    lastLog.granted = granted;
-    newLogAvailable = true;
+    fillAccessLog("KEYPAD", "PIN", inputPIN.c_str(), granted);
 
     Serial.println("PIN: " + inputPIN + " → " + (granted ? "GRANTED" : "DENIED"));
 

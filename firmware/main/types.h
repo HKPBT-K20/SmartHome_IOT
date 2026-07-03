@@ -1,6 +1,8 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+#include <Arduino.h>
+
 struct SensorData {
   float temperature; // Nhiệt độ (°C) từ LM35
   int   lightLevel;  // Mức độ ánh sáng từ quang trở (0–4095)
@@ -8,12 +10,15 @@ struct SensorData {
 };
 
 struct AccessLog {
-  char uid[20];     // UID thẻ RFID hoặc mã PIN
-  char method[10];  // "RFID" hoặc "KEYPAD"
-  char time[20];    // "HH:MM:SS DD/MM/YY"
-  bool granted;     // true = mở cửa, false = từ chối
+  uint64_t createdAt;         // Timestamp (ms)
+  char     displayTime[32];   // "03/07/2026 14:12:01"
+  char     authMethod[16];    // "KEYPAD" hoặc "RFID"
+  char     identityType[16];  // "PIN" hoặc "RFID"
+  char     identityValue[32]; // Mã PIN hoặc UID thẻ
+  char     actorId[32];       // "user_001" hoặc "unknown"
+  char     actorName[64];     // "Vo Nguyen Thien Phu" hoặc "Unknown User"
+  char     result[16];        // "Success" hoặc "Failed"
+  bool     granted;           // true hoặc false
 };
-
-
 
 #endif // TYPES_H
