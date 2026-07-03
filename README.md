@@ -16,15 +16,15 @@ Hệ thống nhà thông minh sử dụng **ESP32** làm vi điều khiển trun
 ## 🗂️ Cấu trúc thư mục
 
 ```
-smart-home/
+SmartHome_IOT/
 │
 ├── firmware/                  # Code chạy trên ESP32 (Arduino IDE)
-│   ├── src/
+│   ├── main/                  # Sketch chính — mở folder này bằng Arduino IDE
 │   │   ├── main.ino           # Loop chính, gọi các module
 │   │   ├── sensor.ino         # Khuyên: LM35, quang trở, DS1307
 │   │   ├── display.ino        # Khuyên: LCD hiển thị
-│   │   ├── security.ino       # Phú: RFID, Keypad, Servo, PIR
-│   │   ├── actuator.ino       # Phú: Relay, Còi
+│   │   ├── security.ino       # Phú: RFID, Keypad, PIR
+│   │   ├── actuator.ino       # Phú: Servo, Relay, Còi
 │   │   ├── network.ino        # Bảo: WiFi, Firebase push/listen
 │   │   └── weather.ino        # Bảo: Fetch API thời tiết
 │   ├── config.h               # ⚠ KHÔNG push lên Git (đã gitignore)
@@ -54,16 +54,17 @@ smart-home/
 
 | Linh kiện | Giao tiếp | Chân ESP32 | Ghi chú |
 |---|---|---|---|
-| DS1307 RTC | I2C | GPIO 21, 22 | Chia bus với LCD |
-| LCD1602 I2C | I2C | GPIO 21, 22 | Địa chỉ 0x27 hoặc 0x3F |
-| RFID RC522 | SPI | GPIO 5, 18, 19, 23, 27 | SS=5, RST=27 |
-| Servo SG90 | PWM | GPIO 25 | Mô phỏng khóa cửa |
-| LM35 | ADC | GPIO 34 | Input only |
+| DS1307 RTC | I2C | GPIO 21 (SDA), 22 (SCL) | Chia bus với LCD |
+| LCD1602 I2C | I2C | GPIO 21 (SDA), 22 (SCL) | Địa chỉ 0x27 hoặc 0x3F |
+| RFID RC522 | SPI | SS=5, RST=27, SCK=18, MOSI=23, MISO=19 | SPI mặc định ESP32 |
+| Servo SG90 | PWM | **GPIO 26** | Mô phỏng khóa cửa (0°=mở, 90°=đóng) |
+| LM35 | ADC | GPIO 34 | Input only, 12-bit ADC |
 | Quang trở CDS | ADC | GPIO 35 | Chia áp điện trở 10K |
-| PIR HC-SR501 | Interrupt | GPIO 13 | RISING edge |
-| Relay 4 kênh | Digital | GPIO 26, 32, 33, 14 | LOW = bật |
-| Keypad 4x4 | Digital | GPIO 12,15,2,0/4,16,17,5 | Cẩn thận GPIO 0 |
-| Còi buzzer | Digital | GPIO 33 | — |
+| PIR HC-SR501 | Interrupt | GPIO 13 | RISING edge, debounce 500ms |
+| Relay 4 kênh | Digital | GPIO 32, 33, 18, 23 | LOW = bật, HIGH = tắt |
+| Keypad 4x4 Rows | Digital | GPIO 12, 15, 2, 0 | Cẩn thận GPIO 0 (boot) |
+| Keypad 4x4 Cols | Digital | **GPIO 4, 16, 17, 25** | Tránh GPIO 21/22 (I2C) |
+| Còi buzzer | Digital | **GPIO 14** | Tránh GPIO 4 (Keypad Row) |
 | IR Receiver 1838T | Digital | GPIO 36 | Fallback khi mất WiFi |
 
 > ⚠ GPIO 6–11: KHÔNG dùng (kết nối flash nội). GPIO 34–39: chỉ INPUT.
@@ -97,7 +98,7 @@ Vào **Sketch → Include Library → Manage Libraries**, cài các thư viện 
 | Keypad | Keypad 4x4 | Mark Stanley |
 | IRremoteESP8266 | Remote hồng ngoại | crankyoldgit |
 | Firebase ESP32 Client | Firebase | mobizt |
-| ArduinoJson | Parse JSON | Benoit Blanchon |
+| **ArduinoJson** | **Parse JSON thời tiết** | **Benoit Blanchon** |
 | MD_MAX72XX + MD_Parola | Matrix LED (nếu dùng) | MajicDesigns |
 
 ### 3. Cấu hình dự án
@@ -194,7 +195,14 @@ struct AccessLog {
   char time[20];       // "HH:MM:SS DD/MM/YY"
   bool granted;        // true = mở cửa, false = từ chối
 };
+
+struct WeatherData {
+  float temperature;      // Nhiệt độ ngoài trời (°C) từ OpenWeatherMap
+  char  weatherDesc[32];  // Mô tả, ví dụ: "mưa nhẹ"
+};
 ```
+
+> ⚠ Không tự ý thay đổi layout của struct — sẽ phá vỡ serialization Firebase và compatibility giữa các module.
 
 ---
 

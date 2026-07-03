@@ -1,17 +1,41 @@
-// Phú: RFID, Keypad, Servo, PIR
+// Phú: RFID, Keypad, PIR
+#include <SPI.h>
 #include <MFRC522.h>
 #include <Keypad.h>
 #include "types.h"
 
-// ── RFID ──────────────────────────────────────────
+// ── PIR ───────────────────────────────────────────────────────
+// Khai báo lên đầu file — #define phải có mặt trước khi setupSecurity() dùng
+#define PIR_PIN            13
+#define PIR_COOLDOWN_NIGHT 30000    // 30 giây ban đêm
+#define PIR_COOLDOWN_DAY   300000   // 5 phút ban ngày
+
+volatile bool pirTriggered = false;
+unsigned long lastPIRAlert = 0;
+
+void IRAM_ATTR onPIR() {
+  static unsigned long lastISR = 0;
+  if (millis() - lastISR > 500) {
+    pirTriggered = true;
+    lastISR = millis();
+  }
+}
+
+// ── RFID ──────────────────────────────────────────────────────
+// SS=5, RST=3V3 (cắm thẳng nguồn, không dùng GPIO → RST_PIN=-1)
+// SCK=18, MOSI=23, MISO=19 (SPI mặc định ESP32)
 #define SS_PIN  5
-#define RST_PIN 27
+#define RST_PIN -1
 MFRC522 rfid(SS_PIN, RST_PIN);
 
-String validUIDs[] = {"A1B2C3D4", "E5F6G7H8"};
-int uidCount = sizeof(validUIDs) / sizeof(validUIDs[0]);
+// UID thẻ phải viết đúng hex: chỉ gồm 0-9 và A-F
+String validUIDs[] = {"A1B2C3D4", "E5F60718"};
+int    uidCount    = sizeof(validUIDs) / sizeof(validUIDs[0]);
 
-// ── KEYPAD ────────────────────────────────────────
+// ── KEYPAD ────────────────────────────────────────────────────
+// Rows: GPIO 4, 15, 2, 0
+// Cols: GPIO 27, 16, 17, 25
+// ⚠ GPIO 2 (R3) và GPIO 0 (R4) là strapping pins — không bấm phím lúc cấp nguồn
 const byte ROWS = 4, COLS = 4;
 char keys[ROWS][COLS] = {
   {'1','2','3','A'},
@@ -19,27 +43,34 @@ char keys[ROWS][COLS] = {
   {'7','8','9','C'},
   {'*','0','#','D'}
 };
-byte rowPins[ROWS] = {12, 15, 2,  0};
-byte colPins[COLS] = {22,  16, 17, 21};
+byte rowPins[ROWS] = { 4, 15, 2,  0};
+byte colPins[COLS] = {27, 16, 17, 25};
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
-String correctPIN    = "123456";
-String inputPIN      = "";
-int    wrongAttempts = 0;
-bool   isLocked      = false;
-unsigned long lockedUntil = 0;
+String        correctPIN    = "123456";
+String        inputPIN      = "";
+int           wrongAttempts = 0;
+bool          isLocked      = false;
+unsigned long lockedUntil   = 0;
 
-// ── ACCESS LOG ────────────────────────────────────
+// ── ACCESS LOG ────────────────────────────────────────────────
 AccessLog lastLog;
-bool newLogAvailable = false;
+bool      newLogAvailable = false;
 
-// ── RFID ──────────────────────────────────────────
+// ── SETUP ─────────────────────────────────────────────────────
 void setupSecurity() {
   SPI.begin();
   rfid.PCD_Init();
+  keypad.setDebounceTime(5);
+  keypad.setHoldTime(500);
+
+  pinMode(PIR_PIN, INPUT);
+  attachInterrupt(digitalPinToInterrupt(PIR_PIN), onPIR, RISING);
+
   Serial.println("Security module ready");
 }
 
+// ── RFID ──────────────────────────────────────────────────────
 void checkRFID() {
   if (!rfid.PICC_IsNewCardPresent()) return;
   if (!rfid.PICC_ReadCardSerial())   return;
@@ -61,8 +92,8 @@ void checkRFID() {
   uid.toCharArray(lastLog.uid, 20);
   strcpy(lastLog.method, "RFID");
   getTimeString(lastLog.time);
-  lastLog.granted  = granted;
-  newLogAvailable  = true;
+  lastLog.granted = granted;
+  newLogAvailable = true;
 
   if (granted) openDoor();
   else         alertBuzzer();
@@ -71,13 +102,11 @@ void checkRFID() {
   rfid.PCD_StopCrypto1();
 }
 
-// ── KEYPAD ────────────────────────────────────────
+// ── KEYPAD ────────────────────────────────────────────────────
 void checkKeypad() {
-  // Kiểm tra lockout
   if (isLocked) {
     if (millis() < lockedUntil) {
-      Serial.println("LOCKED — wait " + String((lockedUntil - millis()) / 1000) + "s");
-      return;
+      return; // không spam Serial
     } else {
       isLocked      = false;
       wrongAttempts = 0;
@@ -96,8 +125,16 @@ void checkKeypad() {
       Serial.println("Wrong PIN (" + String(wrongAttempts) + "/3)");
       if (wrongAttempts >= 3) {
         isLocked    = true;
-        lockedUntil = millis() + 30000; // khóa 30 giây
+        lockedUntil = millis() + 30000;
         Serial.println("Too many attempts — locked 30s");
+
+        // Ghi log trước khi return — sự kiện bị khóa phải có trong Firebase
+        strncpy(lastLog.uid, inputPIN.c_str(), 20);
+        strcpy(lastLog.method, "KEYPAD");
+        getTimeString(lastLog.time);
+        lastLog.granted = false;
+        newLogAvailable = true;
+
         alertBuzzer();
         inputPIN = "";
         return;
@@ -122,7 +159,6 @@ void checkKeypad() {
     Serial.println("PIN cleared");
   }
   else {
-    // Giới hạn 6 ký tự
     if (inputPIN.length() < 6) {
       inputPIN += key;
       Serial.println("Input: " + String(inputPIN.length()) + "/6 digits");
@@ -132,34 +168,26 @@ void checkKeypad() {
   }
 }
 
-// ── PIR ───────────────────────────────────────────
-#define PIR_PIN 13
-volatile bool pirTriggered = false;
-unsigned long lastPIRAlert = 0;
-#define PIR_COOLDOWN 30000 // 30 giây
-
-void IRAM_ATTR onPIR() {
-  pirTriggered = true;
-}
-
-void setupPIR() {
-  pinMode(PIR_PIN, INPUT);
-  attachInterrupt(digitalPinToInterrupt(PIR_PIN), onPIR, RISING);
-}
 
 void checkPIR(int currentHour) {
   if (!pirTriggered) return;
-  pirTriggered = false;
 
-  // Cooldown 30 giây
-  if (millis() - lastPIRAlert < PIR_COOLDOWN) {
-    Serial.println("PIR: cooldown active, skipping");
+  unsigned long now = millis();
+  bool isNight = (currentHour >= 22 || currentHour < 6);
+  unsigned long cooldown = isNight ? PIR_COOLDOWN_NIGHT : PIR_COOLDOWN_DAY;
+
+  if (now - lastPIRAlert < cooldown) {
+    pirTriggered = false;
     return;
   }
 
-  if (currentHour >= 22 || currentHour < 6) {
+  pirTriggered = false;
+  lastPIRAlert = now;
+
+  if (isNight) {
     Serial.println("PIR: Intruder detected!");
     alertBuzzer();
-    lastPIRAlert = millis();
+  } else {
+    Serial.println("PIR: Motion detected (daytime)");
   }
 }
