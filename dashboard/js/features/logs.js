@@ -9,6 +9,33 @@ import {
 } from "../core/firebase.js";
 import { confirmAction, showToast } from "../core/ui.js";
 
+const ACCESS_LOG_PATH = "access_logs";
+const LEGACY_ACCESS_LOG_PATH = "access_log";
+
+let latestAccessLogs = {};
+let latestLegacyLogs = {};
+
+function normalizeLogEntry(log = {}) {
+    const createdAtRaw = log.created_at ?? log.createdAt ?? log.timestamp_ms ?? log.time_ms;
+    const createdAt = Number.isFinite(Number(createdAtRaw)) ? Number(createdAtRaw) : 0;
+    const displayTime = log.display_time ?? log.timestamp ?? log.time ?? "--";
+    const method = log.auth_method ?? log.method ?? "--";
+    const user = log.actor_name ?? log.user ?? log.identity_value ?? log.actor_id ?? "--";
+
+    let status = log.result ?? log.status ?? "--";
+    if (status === "--" && typeof log.granted === "boolean") {
+        status = log.granted ? "Success" : "Denied";
+    }
+
+    return {
+        createdAt,
+        displayTime,
+        method,
+        user,
+        status
+    };
+}
+
 function renderLogRows(logs) {
     const tableDashboard = document.getElementById("table-access-log");
     const tableFullLogs = document.getElementById("table-full-logs");
@@ -20,12 +47,16 @@ function renderLogRows(logs) {
         return;
     }
 
-    const logEntries = Object.values(logs).reverse();
+    const logEntries = Object.values(logs)
+        .map(normalizeLogEntry)
+        .sort((a, b) => b.createdAt - a.createdAt);
+
     if (tableDashboard) tableDashboard.innerHTML = "";
     if (tableFullLogs) tableFullLogs.innerHTML = "";
 
     logEntries.forEach((log, index) => {
-        const statusStyle = log.status === "Success"
+        const isSuccess = log.status === "Success" || log.status === "Granted" || log.status === "Allow";
+        const statusStyle = isSuccess
             ? "text-emerald-400 bg-emerald-500/10"
             : "text-red-400 bg-red-500/10";
         const iconType = log.method === "RFID"
@@ -34,7 +65,7 @@ function renderLogRows(logs) {
 
         const rowHtml = `
             <tr class="hover:bg-slate-900/80 border-b border-slate-700/60">
-                <td class="px-6 py-4 text-slate-300 font-mono text-xs">${log.timestamp ?? "--"}</td>
+                <td class="px-6 py-4 text-slate-300 font-mono text-xs">${log.displayTime ?? "--"}</td>
                 <td class="px-6 py-4 font-medium"><i class="fa-solid ${iconType} mr-2"></i>${log.method ?? "--"}</td>
                 <td class="px-6 py-4 text-slate-300">${log.user ?? "--"}</td>
                 <td class="px-6 py-4">
@@ -52,14 +83,29 @@ function renderLogRows(logs) {
     });
 }
 
+function refreshLogsView() {
+    const preferredLogs = Object.keys(latestAccessLogs).length > 0
+        ? latestAccessLogs
+        : latestLegacyLogs;
+
+    renderLogRows(preferredLogs);
+}
+
 export function initLogsFeature() {
     const btnClearLogs = document.getElementById("btn-clear-logs");
 
     if (USE_MOCK_DEMO) {
-        renderLogRows(getMockAccessLogs());
+        latestAccessLogs = getMockAccessLogs();
+        refreshLogsView();
     } else {
-        onValue(ref(db, "access_log"), snapshot => {
-            renderLogRows(snapshot.val());
+        onValue(ref(db, ACCESS_LOG_PATH), snapshot => {
+            latestAccessLogs = snapshot.val() || {};
+            refreshLogsView();
+        });
+
+        onValue(ref(db, LEGACY_ACCESS_LOG_PATH), snapshot => {
+            latestLegacyLogs = snapshot.val() || {};
+            refreshLogsView();
         });
     }
 
@@ -78,9 +124,12 @@ export function initLogsFeature() {
         try {
             if (USE_MOCK_DEMO) {
                 clearMockAccessLogs();
-                renderLogRows({});
+                latestAccessLogs = {};
+                latestLegacyLogs = {};
+                refreshLogsView();
             } else {
-                await remove(ref(db, "access_log"));
+                await remove(ref(db, ACCESS_LOG_PATH));
+                await remove(ref(db, LEGACY_ACCESS_LOG_PATH));
             }
             showToast("Đã xóa lịch sử truy cập", "Toàn bộ log đã được dọn sạch.", "success");
         } catch (error) {
