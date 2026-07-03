@@ -10,13 +10,13 @@ import {
 
 // 1. Firebase config
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyDo0ncLdnDplJoessMju0EKoGQGsvDealI",
+    authDomain: "smart-home-iot-d1c77.firebaseapp.com",
+    databaseURL: "https://smart-home-iot-d1c77-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "smart-home-iot-d1c77",
+    storageBucket: "smart-home-iot-d1c77.firebasestorage.app",
+    messagingSenderId: "780541959867",
+    appId: "1:780541959867:web:6918bb038c57975b65939e"
 };
 
 const app = initializeApp(firebaseConfig);
