@@ -5,7 +5,6 @@ extern bool newLogAvailable;  // security.ino
 
 // ── millis() TIMERS ───────────────────────────────────────────
 static unsigned long lastSensorPush   = 0;
-static unsigned long lastWeatherFetch = 0;
 static unsigned long lastCmdPoll      = 0;
 
 void setup() {
@@ -18,7 +17,7 @@ void setup() {
   setupDisplay();   // TV1: LCD I2C — Wire.begin() gọi bên trong
   setupActuator();  // TV2: Servo, Relay, Buzzer
   setupSecurity();  // TV2: SPI, RFID, Keypad + PIR interrupt
-  setupWiFi();      // TV3: WiFi, timeout 10 giây
+
   setupFirebase();  // TV3: Firebase Realtime Database
 
   Serial.println("=== Boot complete ===");
@@ -42,11 +41,7 @@ void loop() {
     lastSensorPush = now;
   }
 
-  // ── Fetch thời tiết mỗi 15 phút ─────────────────────────────
-  if (now - lastWeatherFetch >= 900000) {
-    fetchWeather();
-    lastWeatherFetch = now;
-  }
+
 
   // ── Poll lệnh relay từ Firebase mỗi 5 giây ──────────────────
   if (now - lastCmdPoll >= 5000) {

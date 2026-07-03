@@ -2,11 +2,11 @@
 #include <ESP32Servo.h>
 
 // ── PIN DEFINITIONS ───────────────────────────────────────────
-// SERVO: GPIO 26 (tránh GPIO 25 bị Keypad Col4 dùng)
+// SERVO: GPIO 25
 // BUZZER: GPIO 14
 // RELAY: CH1=32, CH2=33
 // Lưu ý: relay kích mức THẤP → HIGH = tắt, LOW = bật
-#define SERVO_PIN  26
+#define SERVO_PIN  25
 #define BUZZER     14
 #define RELAY_1    32
 #define RELAY_2    33
@@ -22,13 +22,17 @@ void setupActuator() {
   pinMode(RELAY_1, OUTPUT);
   pinMode(RELAY_2, OUTPUT);
 
-  digitalWrite(RELAY_1, HIGH);
-  digitalWrite(RELAY_2, HIGH);
+  // Mặc định ban đầu: Tắt Relay (LOW)
+  digitalWrite(RELAY_1, LOW);
+  digitalWrite(RELAY_2, LOW);
 
-  // ESP32Servo cần setPeriodHertz trước attach
-  doorServo.setPeriodHertz(50);
+  // Cấp phát Timer phần cứng ESP32 cho PWM của Servo
+  ESP32PWM::allocateTimer(0);
+  ESP32PWM::allocateTimer(1);
+  doorServo.setPeriodHertz(50); // Servo tiêu chuẩn 50Hz
   doorServo.attach(SERVO_PIN, 500, 2400);
-  doorServo.write(90); // 90° = cửa đóng (0° = cửa mở)
+  doorServo.write(90); // Ban đầu: 90° (Cửa đóng)
+  
   Serial.println("Actuator module ready");
 }
 
@@ -40,15 +44,14 @@ void updateDoor() {
 }
 
 void openDoor() {
-  if (doorOpen) return;
-  Serial.println("Door: Opening...");
+  Serial.println("Door: Opening... (Servo -> 0 deg)");
   doorServo.write(0); // 0° = mở cửa
   doorOpen     = true;
   doorOpenedAt = millis();
 }
 
 void closeDoor() {
-  Serial.println("Door: Closed");
+  Serial.println("Door: Closing... (Servo -> 90 deg)");
   doorServo.write(90); // 90° = đóng cửa
   doorOpen = false;
 }
@@ -57,7 +60,8 @@ void closeDoor() {
 void setRelay(int ch, bool on) {
   int pins[] = {0, RELAY_1, RELAY_2};
   if (ch < 1 || ch > 2) return;
-  digitalWrite(pins[ch], on ? LOW : HIGH);
+  // Đã sửa logic: on = true -> HIGH (bật đèn), on = false -> LOW (tắt đèn)
+  digitalWrite(pins[ch], on ? HIGH : LOW);
   Serial.println("Relay " + String(ch) + ": " + (on ? "ON" : "OFF"));
 }
 
