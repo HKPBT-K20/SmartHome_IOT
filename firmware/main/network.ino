@@ -1,5 +1,7 @@
 // Bảo: WiFi, Firebase Realtime Database
-#include <Firebase_ESP_Client.h>
+#include <WiFi.h>
+#include <RTClib.h>
+#include <FirebaseESP32.h>
 #include "config.h"
 #include "types.h"
 
@@ -16,18 +18,68 @@ extern bool      newLogAvailable;
 
 // ── SETUP ─────────────────────────────────────────────────────
 void setupFirebase() {
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Firebase: no WiFi — skip");
-    return;
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  Serial.print("Connecting WiFi");
+
+  unsigned long start = millis();
+  while (WiFi.status() != WL_CONNECTED) {
+    if (millis() - start > 15000) {
+      Serial.println("\nWiFi timeout — check SSID/password in config.h");
+      return;
+    }
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nWiFi connected: " + WiFi.localIP().toString());
+
+  // NTP là nguồn thời gian ưu tiên — SSL cần notBefore/notAfter hợp lệ
+  configTime(7 * 3600, 0, "time.google.com", "pool.ntp.org");
+  delay(2000);
+
+  struct tm t;
+  if (getLocalTime(&t) && t.tm_year > 120) {
+    Serial.printf("NTP synced: %04d-%02d-%02d %02d:%02d:%02d\n",
+      t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
+      t.tm_hour, t.tm_min, t.tm_sec);
+
+  } else {
+    // Fallback 1: compile-time — đủ dùng cho dev/test, đúng trong vài phút sau Upload
+    // DateTime(__DATE__,__TIME__) parse local time (GMT+7) → trừ 7h ra UTC cho settimeofday()
+    Serial.println("NTP unavailable — using compile-time fallback (DEV ONLY)");
+    DateTime compileTime(F(__DATE__), F(__TIME__));
+    time_t utc = (time_t)compileTime.unixtime() - 7UL * 3600UL; // GMT+7 local → UTC
+    struct timeval tv = { utc, 0 };
+    settimeofday(&tv, nullptr);
+
+    // Xác nhận lại
+    getLocalTime(&t);
+    Serial.printf("Compile-time set: %04d-%02d-%02d %02d:%02d:%02d (GMT+7)\n",
+      t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
+      t.tm_hour, t.tm_min, t.tm_sec);
+
+#ifdef RTC_ENABLED
+    // Fallback 2 (production): validate và dùng RTC nếu compile-time quá cũ
+    extern RTC_DS1307 rtc;
+    DateTime rtcNow = rtc.now();
+    if (rtcNow.year() >= 2024 && rtcNow.year() <= 2099) {
+      time_t rtcUtc = (time_t)rtcNow.unixtime() - 7UL * 3600UL;
+      struct timeval tvRtc = { rtcUtc, 0 };
+      settimeofday(&tvRtc, nullptr);
+      Serial.printf("RTC override: %04d-%02d-%02d %02d:%02d:%02d\n",
+        rtcNow.year(), rtcNow.month(), rtcNow.day(),
+        rtcNow.hour(), rtcNow.minute(), rtcNow.second());
+    }
+#endif
   }
 
-  // Dùng Database Secret (legacy token) — không cần email/password
-  fbConfig.database_url              = FIREBASE_URL;
+
+  fbConfig.database_url               = FIREBASE_URL;
   fbConfig.signer.tokens.legacy_token = FIREBASE_KEY;
 
   Firebase.begin(&fbConfig, &auth);
   Firebase.reconnectWiFi(true);
-  fbdo.setResponseSize(2048);
+  fbdo.setResponseSize(4096);
 
   firebaseReady = true;
   Serial.println("Firebase ready");
@@ -44,9 +96,9 @@ void pushSensors() {
   getTimeString(timeStr);
 
   bool ok = true;
-  ok &= Firebase.RTDB.setFloat (&fbdo, "/sensors/temp",  temp);
-  ok &= Firebase.RTDB.setInt   (&fbdo, "/sensors/light", light);
-  ok &= Firebase.RTDB.setString(&fbdo, "/sensors/time",  timeStr);
+  ok &= Firebase.setFloat (fbdo, "/sensors/temp",  temp);
+  ok &= Firebase.setInt   (fbdo, "/sensors/light", light);
+  ok &= Firebase.setString(fbdo, "/sensors/time",  timeStr);
 
   if (ok) {
     Serial.printf("Sensors pushed: %.1f C, light=%d\n", temp, light);
@@ -65,14 +117,13 @@ void pushAccessLog() {
 
   if (!firebaseReady || !Firebase.ready()) return;
 
-  // pushJSON tự tạo key dạng "-NxXXXXXX" theo timestamp Firebase
   FirebaseJson json;
   json.set("uid",     lastLog.uid);
   json.set("method",  lastLog.method);
   json.set("time",    lastLog.time);
   json.set("granted", lastLog.granted);
 
-  if (Firebase.RTDB.pushJSON(&fbdo, "/access_log", &json)) {
+  if (Firebase.pushJSON(fbdo, "/access_log", json)) {
     Serial.println("AccessLog pushed: " + String(lastLog.uid)
                    + " [" + String(lastLog.method) + "] "
                    + (lastLog.granted ? "GRANTED" : "DENIED"));
@@ -88,11 +139,24 @@ void listenCommands() {
 
   bool val;
 
-  if (Firebase.RTDB.getBool(&fbdo, "/commands/relay_1", &val)) {
+  if (Firebase.getBool(fbdo, "/commands/relay_1", &val)) {
     setRelay(1, val);
+    pushRelayState(1, val);
   }
 
-  if (Firebase.RTDB.getBool(&fbdo, "/commands/relay_2", &val)) {
+  if (Firebase.getBool(fbdo, "/commands/relay_2", &val)) {
     setRelay(2, val);
+    pushRelayState(2, val);
+  }
+}
+
+// ── PUSH RELAY STATE ─────────────────────────────────────────
+// Sync trạng thái relay lên /relay/ch1|ch2 để dashboard đọc được
+void pushRelayState(int ch, bool on) {
+  if (!firebaseReady || !Firebase.ready()) return;
+  if (ch == 1) {
+    Firebase.setBool(fbdo, "/relay/ch1", on);
+  } else if (ch == 2) {
+    Firebase.setBool(fbdo, "/relay/ch2", on);
   }
 }

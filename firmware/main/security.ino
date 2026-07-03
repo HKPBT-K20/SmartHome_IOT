@@ -44,7 +44,7 @@ char keys[ROWS][COLS] = {
   {'*','0','#','D'}
 };
 byte rowPins[ROWS] = { 4, 15, 2,  0};
-byte colPins[COLS] = {27, 16, 17, 25};
+byte colPins[COLS] = {27, 16, 17, 13};
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 String        correctPIN    = "123456";
@@ -64,7 +64,7 @@ void setupSecurity() {
   keypad.setDebounceTime(5);
   keypad.setHoldTime(500);
 
-  pinMode(PIR_PIN, INPUT);
+  pinMode(PIR_PIN, INPUT_PULLDOWN);
   attachInterrupt(digitalPinToInterrupt(PIR_PIN), onPIR, RISING);
 
   Serial.println("Security module ready");

@@ -14,9 +14,6 @@ struct AccessLog {
   bool granted;     // true = mở cửa, false = từ chối
 };
 
-struct WeatherData {
-  float temperature;      // Nhiệt độ ngoài trời (°C)
-  char  weatherDesc[32];  // Mô tả thời tiết, ví dụ: "mưa nhẹ"
-};
+
 
 #endif // TYPES_H
