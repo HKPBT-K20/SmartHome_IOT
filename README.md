@@ -5,7 +5,7 @@
 
 ## 📋 Mô tả dự án
 
-Hệ thống nhà thông minh sử dụng **ESP32** làm vi điều khiển trung tâm, xử lý đồng thời 3 nhóm tác vụ:
+H? th?ng nh� th�ng minh s? d?ng **ESP32** l�m vi di?u khi?n trung t�m, x? l� d?ng th?i 3 nh�m t�c v?:
 
 - **Time-Critical** — Hẹn giờ bật/tắt thiết bị dựa trên DS1307 RTC
 - **Event-Driven** — Kiểm soát vào/ra bằng RFID + Keypad, cảnh báo PIR
@@ -27,7 +27,7 @@ smart-home/
 │   │   ├── actuator.ino       # Phú: Relay, Còi
 │   │   ├── network.ino        # Bảo: WiFi, Firebase push/listen
 │   │   └── weather.ino        # Bảo: Fetch API thời tiết
-│   ├── config.h               # ⚠ KHÔNG push lên Git (đã gitignore)
+�   +-- config.h               # ? KH�NG push l�n Git (d� gitignore)
 │   ├── config.example.h       # Template cấu hình — copy thành config.h
 │   └── types.h                # Struct dùng chung cho cả nhóm
 │
@@ -41,7 +41,7 @@ smart-home/
 │
 ├── docs/
 │   ├── SmartHome_PhanCong.docx
-│   ├── schematic.png          # Sơ đồ kết nối chân GPIO
+�   +-- schematic.png          # So d? k?t n?i ch�n GPIO
 │   └── firebase_schema.md     # Schema Firebase
 │
 ├── .gitignore
@@ -52,7 +52,7 @@ smart-home/
 
 ## ⚙️ Yêu cầu phần cứng
 
-| Linh kiện | Giao tiếp | Chân ESP32 | Ghi chú |
+| Linh ki?n | Giao ti?p | Ch�n ESP32 | Ghi ch� |
 |---|---|---|---|
 | DS1307 RTC | I2C | GPIO 21, 22 | Chia bus với LCD |
 | LCD1602 I2C | I2C | GPIO 21, 22 | Địa chỉ 0x27 hoặc 0x3F |
@@ -118,7 +118,7 @@ Mở `firmware/config.h` và điền thông tin thật:
 #define CITY_ID       "1580578"  // TP.HCM
 ```
 
-> ⚠ `config.h` đã được thêm vào `.gitignore` — **không bao giờ push file này lên Git**.
+> ? `config.h` d� du?c th�m v�o `.gitignore` � **kh�ng bao gi? push file n�y l�n Git**.
 
 ### 4. Firebase setup
 
@@ -150,7 +150,7 @@ Mở `firmware/config.h` và điền thông tin thật:
 
 ---
 
-## 👥 Phân công
+## ?? Ph�n c�ng
 
 | Thành viên | Mảng phụ trách | File chính |
 |---|---|---|
@@ -189,7 +189,7 @@ struct SensorData {
 };
 
 struct AccessLog {
-  char uid[20];        // UID thẻ RFID hoặc mã PIN
+  char uid[20];        // UID th? RFID ho?c m� PIN
   char method[10];     // "RFID" hoặc "KEYPAD"
   char time[20];       // "HH:MM:SS DD/MM/YY"
   bool granted;        // true = mở cửa, false = từ chối
@@ -226,3 +226,27 @@ void loop() {
 - Bảo: Đăng ký OpenWeatherMap API key
 - Huy: Dựng khung Web Dashboard
 - Khuyên, Phú: Code logic trên Wokwi
+
+---
+
+## Cấu trúc source hiện tại
+
+Dashboard d� du?c t�ch r� theo l?p:
+
+```text
+dashboard/
+  index.html
+  js/
+    app.js
+    core/
+      firebase.js
+      ui.js
+    features/
+      auth.js
+      logs.js
+      schedule.js
+      security.js
+      weather.js
+```
+
+`dashboard/js/app.js` l� entry point m?ng, c�n to�n b? logic d� du?c chia theo t?ng module ch?c nang.
