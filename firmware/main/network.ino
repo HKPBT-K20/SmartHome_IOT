@@ -118,15 +118,20 @@ void pushAccessLog() {
   if (!firebaseReady || !Firebase.ready()) return;
 
   FirebaseJson json;
-  json.set("uid",     lastLog.uid);
-  json.set("method",  lastLog.method);
-  json.set("time",    lastLog.time);
-  json.set("granted", lastLog.granted);
+  json.set("created_at",     (double)lastLog.createdAt);
+  json.set("display_time",   lastLog.displayTime);
+  json.set("auth_method",    lastLog.authMethod);
+  json.set("identity_type",  lastLog.identityType);
+  json.set("identity_value", lastLog.identityValue);
+  json.set("actor_id",       lastLog.actorId);
+  json.set("actor_name",     lastLog.actorName);
+  json.set("result",         lastLog.result);
+  json.set("granted",        lastLog.granted);
 
-  if (Firebase.pushJSON(fbdo, "/access_log", json)) {
-    Serial.println("AccessLog pushed: " + String(lastLog.uid)
-                   + " [" + String(lastLog.method) + "] "
-                   + (lastLog.granted ? "GRANTED" : "DENIED"));
+  if (Firebase.pushJSON(fbdo, "/access_logs", json)) {
+    Serial.println("AccessLog pushed: " + String(lastLog.identityValue)
+                   + " [" + String(lastLog.authMethod) + "] "
+                   + String(lastLog.result));
   } else {
     Serial.println("AccessLog push error: " + fbdo.errorReason());
   }
