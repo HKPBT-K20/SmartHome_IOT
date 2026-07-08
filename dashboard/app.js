@@ -534,7 +534,7 @@ onValue(ref(db, 'sensors'), snapshot => {
 // ==========================================
 // RELAY CONTROL
 // ==========================================
-const relayChannels = ['ch1', 'ch2', 'ch3', 'ch4'];
+const relayChannels = ['ch1', 'ch2'];
 
 relayChannels.forEach(ch => {
     const btn = document.getElementById(`btn-${ch}`);

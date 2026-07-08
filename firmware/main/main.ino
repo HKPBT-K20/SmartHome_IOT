@@ -16,7 +16,7 @@ void setup() {
   setupRTC();       // TV1: DS1307
   setupDisplay();   // TV1: LCD I2C — Wire.begin() gọi bên trong
   setupActuator();  // TV2: Servo, Relay, Buzzer
-  setupSecurity();  // TV2: SPI, RFID, Keypad + PIR interrupt
+  setupSecurity();  // TV2: SPI, RFID, Keypad + PIR polling
 
   setupFirebase();  // TV3: Firebase Realtime Database
 

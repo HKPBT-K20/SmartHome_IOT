@@ -32,7 +32,9 @@ function renderSecurityUi(security) {
         iconMotion.className = motionDetected ? "text-2xl text-rose-400" : "text-2xl text-slate-400";
     }
     if (lblMotionStatus) {
-        lblMotionStatus.innerText = motionDetected ? "Cảnh báo: Phát hiện chuyển động" : "Không phát hiện đột nhập";
+        lblMotionStatus.innerText = motionDetected
+            ? "Có chuyển động - PIR đang kích hoạt"
+            : "Không phát hiện chuyển động";
         lblMotionStatus.className = motionDetected ? "font-bold text-rose-300" : "text-sm text-slate-400";
     }
 
@@ -44,8 +46,16 @@ function renderSecurityUi(security) {
         btnToggleAlarm.dataset.active = alarmActive ? "true" : "false";
     }
     if (lblAlarmStatus) {
-        lblAlarmStatus.innerText = alarmActive ? "Hệ thống còi hú: ĐANG BẬT" : "Hệ thống còi hú: Bình thường";
-        lblAlarmStatus.className = alarmActive ? "text-xs text-rose-300 font-semibold mt-1" : "text-xs text-slate-500 mt-1";
+        lblAlarmStatus.innerText = motionDetected
+            ? "Còi đang xử lý cảnh báo chuyển động"
+            : alarmActive
+                ? "Hệ thống còi hú: ĐANG BẬT"
+                : "Hệ thống còi hú: Bình thường";
+        lblAlarmStatus.className = motionDetected
+            ? "text-xs text-rose-300 font-semibold mt-1 animate-pulse"
+            : alarmActive
+                ? "text-xs text-rose-300 font-semibold mt-1"
+                : "text-xs text-slate-500 mt-1";
     }
     btnClearAlarm?.classList.toggle("hidden", !alarmActive);
 
@@ -107,9 +117,11 @@ export function initSecurityFeature() {
 
     btnClearAlarm?.addEventListener("click", async () => {
         try {
+            const selectedRadio = document.querySelector('input[name="security-mode"]:checked');
+            const currentMode = selectedRadio?.value || "always";
             const nextSecurity = USE_MOCK_DEMO
-                ? { ...getMockSecurity(), alarm_status: false, motion_detected: false }
-                : { alarm_status: false, motion_detected: false, mode: "always" };
+                ? { ...getMockSecurity(), alarm_status: false, motion_detected: false, mode: currentMode }
+                : { alarm_status: false, motion_detected: false, mode: currentMode };
             await writeSecurity(nextSecurity);
             showToast("Đã tắt còi báo động", "Tín hiệu khẩn cấp đã được reset.", "success");
         } catch (error) {

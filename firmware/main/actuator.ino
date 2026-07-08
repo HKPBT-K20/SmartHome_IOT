@@ -17,6 +17,8 @@ bool          doorOpen     = false;
 unsigned long doorOpenedAt = 0;
 #define       DOOR_OPEN_MS 3000
 
+bool relayState[3] = {false, false, false};
+
 void setupActuator() {
   pinMode(BUZZER,  OUTPUT);
   pinMode(RELAY_1, OUTPUT);
@@ -25,6 +27,8 @@ void setupActuator() {
   // Mặc định ban đầu: Tắt Relay (LOW)
   digitalWrite(RELAY_1, LOW);
   digitalWrite(RELAY_2, LOW);
+  relayState[1] = false;
+  relayState[2] = false;
 
   // Cấp phát Timer phần cứng ESP32 cho PWM của Servo
   ESP32PWM::allocateTimer(0);
@@ -60,8 +64,10 @@ void closeDoor() {
 void setRelay(int ch, bool on) {
   int pins[] = {0, RELAY_1, RELAY_2};
   if (ch < 1 || ch > 2) return;
+  if (relayState[ch] == on) return;
   // Đã sửa logic: on = true -> HIGH (bật đèn), on = false -> LOW (tắt đèn)
   digitalWrite(pins[ch], on ? HIGH : LOW);
+  relayState[ch] = on;
   Serial.println("Relay " + String(ch) + ": " + (on ? "ON" : "OFF"));
 }
 

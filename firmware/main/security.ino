@@ -6,20 +6,17 @@
 
 // ── PIR ───────────────────────────────────────────────────────
 // Khai báo lên đầu file — #define phải có mặt trước khi setupSecurity() dùng
-#define PIR_PIN            13
+#define PIR_PIN            35
+#define PIR_CONFIRM_MS     200      // Giữ HIGH liên tục 200ms mới xác nhận
 #define PIR_COOLDOWN_NIGHT 30000    // 30 giây ban đêm
 #define PIR_COOLDOWN_DAY   300000   // 5 phút ban ngày
+#define PIR_ACTIVE_MS      5000     // Giữ trạng thái web trong 5 giây
 
-volatile bool pirTriggered = false;
+char securityMode[16] = "always";
 unsigned long lastPIRAlert = 0;
-
-void IRAM_ATTR onPIR() {
-  static unsigned long lastISR = 0;
-  if (millis() - lastISR > 500) {
-    pirTriggered = true;
-    lastISR = millis();
-  }
-}
+bool motionDetected = false;
+unsigned long motionDetectedUntil = 0;
+void pushSecurityMotion(bool detected);
 
 // ── RFID ──────────────────────────────────────────────────────
 // SS=5, RST=3V3 (cắm thẳng nguồn, không dùng GPIO → RST_PIN=-1)
@@ -65,7 +62,6 @@ void setupSecurity() {
   keypad.setHoldTime(500);
 
   pinMode(PIR_PIN, INPUT_PULLDOWN);
-  attachInterrupt(digitalPinToInterrupt(PIR_PIN), onPIR, RISING);
 
   Serial.println("Security module ready");
 }
@@ -190,24 +186,64 @@ void checkKeypad() {
 
 
 void checkPIR(int currentHour) {
-  if (!pirTriggered) return;
-
   unsigned long now = millis();
-  bool isNight = (currentHour >= 22 || currentHour < 6);
-  unsigned long cooldown = isNight ? PIR_COOLDOWN_NIGHT : PIR_COOLDOWN_DAY;
+  static unsigned long candidateStart = 0;
+  static bool confirmedForCurrentHigh = false;
+  bool pirHigh = (digitalRead(PIR_PIN) == HIGH);
 
-  if (now - lastPIRAlert < cooldown) {
-    pirTriggered = false;
+  if (motionDetected && now >= motionDetectedUntil) {
+    motionDetected = false;
+    pushSecurityMotion(false);
+  }
+
+  if (!pirHigh) {
+    candidateStart = 0;
+    confirmedForCurrentHigh = false;
     return;
   }
 
-  pirTriggered = false;
-  lastPIRAlert = now;
-
-  if (isNight) {
-    Serial.println("PIR: Intruder detected!");
-    alertBuzzer();
-  } else {
-    Serial.println("PIR: Motion detected (daytime)");
+  if (strcmp(securityMode, "disabled") == 0) {
+    candidateStart = 0;
+    confirmedForCurrentHigh = false;
+    return;
   }
+
+  bool isNight = (currentHour >= 22 || currentHour < 6);
+  bool modeAllowsMotion = (strcmp(securityMode, "always") == 0) ||
+                          (strcmp(securityMode, "night_only") == 0 && isNight);
+  unsigned long cooldown = isNight ? PIR_COOLDOWN_NIGHT : PIR_COOLDOWN_DAY;
+
+  if (!modeAllowsMotion) {
+    candidateStart = 0;
+    confirmedForCurrentHigh = false;
+    return;
+  }
+
+  if (candidateStart == 0) {
+    candidateStart = now;
+    return;
+  }
+
+  if (confirmedForCurrentHigh) {
+    return;
+  }
+
+  if (now - candidateStart < PIR_CONFIRM_MS) {
+    return;
+  }
+
+  confirmedForCurrentHigh = true;
+  candidateStart = 0;
+
+  if (now - lastPIRAlert < cooldown) {
+    return;
+  }
+
+  lastPIRAlert = now;
+  motionDetected = true;
+  motionDetectedUntil = now + PIR_ACTIVE_MS;
+  pushSecurityMotion(true);
+
+  Serial.println(isNight ? "PIR: Intruder detected!" : "PIR: Motion detected (daytime)");
+  alertBuzzer();
 }

@@ -15,6 +15,145 @@ static bool firebaseReady = false;
 // Các biến này được định nghĩa trong security.ino
 extern AccessLog lastLog;
 extern bool      newLogAvailable;
+extern bool      relayState[3];
+extern char      securityMode[16];
+void pushRelayState(int ch, bool on);
+
+struct RelayScheduleConfig {
+  char onTime[6];
+  char offTime[6];
+  bool enabled;
+  bool valid;
+};
+
+static RelayScheduleConfig relaySchedules[3] = {
+  {{0}, {0}, false, false},
+  {{0}, {0}, false, false},
+  {{0}, {0}, false, false}
+};
+
+static bool copyFirebaseString(const char* path, char* out, size_t outSize) {
+  if (!Firebase.getString(fbdo, path)) {
+    return false;
+  }
+
+  String value = fbdo.stringData();
+  value.trim();
+  strncpy(out, value.c_str(), outSize - 1);
+  out[outSize - 1] = '\0';
+  return true;
+}
+
+static bool parseTimeToMinutes(const char* text, int &minutesOfDay) {
+  int hour = -1;
+  int minute = -1;
+  if (sscanf(text, "%d:%d", &hour, &minute) != 2) {
+    return false;
+  }
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+    return false;
+  }
+
+  minutesOfDay = hour * 60 + minute;
+  return true;
+}
+
+static bool getCurrentMinutesOfDay(int &minutesOfDay) {
+  struct tm t;
+  if (getLocalTime(&t) && t.tm_year > 120) {
+    minutesOfDay = t.tm_hour * 60 + t.tm_min;
+    return true;
+  }
+
+#ifdef RTC_ENABLED
+  extern RTC_DS1307 rtc;
+  DateTime now = rtc.now();
+  if (now.year() >= 2024) {
+    minutesOfDay = now.hour() * 60 + now.minute();
+    return true;
+  }
+#endif
+
+  minutesOfDay = (millis() / 60000UL) % 1440;
+  return false;
+}
+
+static bool isScheduleActive(const RelayScheduleConfig &cfg, int minutesOfDay) {
+  int onMinutes = 0;
+  int offMinutes = 0;
+  if (!cfg.valid) {
+    return false;
+  }
+  if (!parseTimeToMinutes(cfg.onTime, onMinutes) || !parseTimeToMinutes(cfg.offTime, offMinutes)) {
+    return false;
+  }
+
+  if (onMinutes == offMinutes) {
+    return false;
+  }
+
+  if (onMinutes < offMinutes) {
+    return minutesOfDay >= onMinutes && minutesOfDay < offMinutes;
+  }
+
+  return minutesOfDay >= onMinutes || minutesOfDay < offMinutes;
+}
+
+static void syncSecurityMode() {
+  if (!firebaseReady || !Firebase.ready()) return;
+
+  if (!Firebase.getString(fbdo, "/security/mode")) return;
+
+  String mode = fbdo.stringData();
+  mode.trim();
+  if (mode.length() == 0) {
+    mode = "always";
+  }
+
+  strncpy(securityMode, mode.c_str(), sizeof(securityMode) - 1);
+  securityMode[sizeof(securityMode) - 1] = '\0';
+}
+
+static void syncScheduleChannel(int ch, int minutesOfDay) {
+  if (!firebaseReady || !Firebase.ready()) return;
+  if (ch < 1 || ch > 2) return;
+
+  char path[40];
+  bool enabled = false;
+
+  snprintf(path, sizeof(path), "/schedules/ch%d/enabled", ch);
+  if (!Firebase.getBool(fbdo, path, &enabled)) {
+    relaySchedules[ch].enabled = false;
+    relaySchedules[ch].valid = false;
+    return;
+  }
+
+  relaySchedules[ch].enabled = enabled;
+
+  snprintf(path, sizeof(path), "/schedules/ch%d/on_time", ch);
+  if (!copyFirebaseString(path, relaySchedules[ch].onTime, sizeof(relaySchedules[ch].onTime))) {
+    relaySchedules[ch].valid = false;
+    return;
+  }
+
+  snprintf(path, sizeof(path), "/schedules/ch%d/off_time", ch);
+  if (!copyFirebaseString(path, relaySchedules[ch].offTime, sizeof(relaySchedules[ch].offTime))) {
+    relaySchedules[ch].valid = false;
+    return;
+  }
+
+  relaySchedules[ch].valid = true;
+
+  if (!relaySchedules[ch].enabled) {
+    return;
+  }
+
+  bool desiredOn = isScheduleActive(relaySchedules[ch], minutesOfDay);
+  if (relayState[ch] != desiredOn) {
+    setRelay(ch, desiredOn);
+    pushRelayState(ch, desiredOn);
+  }
+}
 
 // ── SETUP ─────────────────────────────────────────────────────
 void setupFirebase() {
@@ -82,6 +221,8 @@ void setupFirebase() {
   fbdo.setResponseSize(4096);
 
   firebaseReady = true;
+  pushRelayState(1, relayState[1]);
+  pushRelayState(2, relayState[2]);
   Serial.println("Firebase ready");
 }
 
@@ -137,8 +278,19 @@ void pushAccessLog() {
   }
 }
 
+// Gọi khi PIR đổi trạng thái để dashboard cập nhật phần an ninh
+void pushSecurityMotion(bool detected) {
+  if (!firebaseReady || !Firebase.ready()) return;
+
+  if (Firebase.setBool(fbdo, "/security/motion_detected", detected)) {
+    Serial.println(String("Security motion pushed: ") + (detected ? "true" : "false"));
+  } else {
+    Serial.println("Security motion push error: " + fbdo.errorReason());
+  }
+}
+
 // ── LISTEN COMMANDS ───────────────────────────────────────────
-// Gọi mỗi 5 giây — poll /commands/relay_1 và relay_2
+// Gọi mỗi 5 giây — poll relay manual, security mode, và lịch tự động
 void listenCommands() {
   if (!firebaseReady || !Firebase.ready()) return;
 
@@ -153,6 +305,13 @@ void listenCommands() {
     setRelay(2, val);
     pushRelayState(2, val);
   }
+
+  syncSecurityMode();
+
+  int minutesOfDay = 0;
+  getCurrentMinutesOfDay(minutesOfDay);
+  syncScheduleChannel(1, minutesOfDay);
+  syncScheduleChannel(2, minutesOfDay);
 }
 
 // ── PUSH RELAY STATE ─────────────────────────────────────────

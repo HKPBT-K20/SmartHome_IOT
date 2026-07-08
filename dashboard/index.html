@@ -427,12 +427,12 @@
                         <h3 class="text-lg font-semibold text-white mb-2">
                             <i class="fa-solid fa-clock text-sky-400 mr-2"></i>Cài đặt lịch hẹn giờ tự động
                         </h3>
-                        <p class="text-sm text-slate-400 mb-6">Nhập giờ bật và giờ tắt, hệ thống sẽ tự hiểu lịch trong ngày hoặc lịch qua đêm.</p>
+                        <p class="text-sm text-slate-400 mb-6">Nhập giờ bật và giờ tắt cho 2 đèn, hệ thống sẽ tự hiểu lịch trong ngày hoặc lịch qua đêm.</p>
 
                         <div class="space-y-4 md:space-y-6">
                             <div class="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 items-end p-4 glass-panel rounded-3xl border border-slate-700/50">
                                 <div class="md:col-span-1">
-                                    <label class="block text-sm font-medium text-slate-200 mb-1">Thiết bị 1 (Đèn)</label>
+                                    <label class="block text-sm font-medium text-slate-200 mb-1">Đèn phòng làm việc</label>
                                     <span class="text-xs text-slate-400 block" id="lbl-schedule-status-ch1">Đang tải...</span>
                                     <p id="schedule-summary-ch1" class="text-xs text-slate-500 mt-2">...</p>
                                 </div>
@@ -452,7 +452,7 @@
 
                             <div class="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 items-end p-4 glass-panel rounded-3xl border border-slate-700/50">
                                 <div class="md:col-span-1">
-                                    <label class="block text-sm font-medium text-slate-200 mb-1">Thiết bị 2 (Quạt)</label>
+                                    <label class="block text-sm font-medium text-slate-200 mb-1">Đèn phòng khách</label>
                                     <span class="text-xs text-slate-400 block" id="lbl-schedule-status-ch2">Đang tải...</span>
                                     <p id="schedule-summary-ch2" class="text-xs text-slate-500 mt-2">...</p>
                                 </div>
@@ -470,45 +470,6 @@
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 items-end p-4 glass-panel rounded-3xl border border-slate-700/50">
-                                <div class="md:col-span-1">
-                                    <label class="block text-sm font-medium text-slate-200 mb-1">Thiết bị 3 (Bếp)</label>
-                                    <span class="text-xs text-slate-400 block" id="lbl-schedule-status-ch3">Đang tải...</span>
-                                    <p id="schedule-summary-ch3" class="text-xs text-slate-500 mt-2">...</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-slate-400 mb-1">Giờ bật (ON)</label>
-                                    <input type="time" id="time-on-ch3" class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-3 py-1.5 text-white focus:outline-none focus:border-sky-400">
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-slate-400 mb-1">Giờ tắt (OFF)</label>
-                                    <input type="time" id="time-off-ch3" class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-3 py-1.5 text-white focus:outline-none focus:border-sky-400">
-                                </div>
-                                <div class="flex gap-2">
-                                    <button id="btn-save-sch-ch3" class="flex-1 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-2xl transition text-sm">Lưu</button>
-                                    <button id="btn-toggle-sch-ch3" class="px-3 py-1.5 bg-slate-800 text-white rounded-2xl transition text-sm">Bật</button>
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 items-end p-4 glass-panel rounded-3xl border border-slate-700/50">
-                                <div class="md:col-span-1">
-                                    <label class="block text-sm font-medium text-slate-200 mb-1">Thiết bị 4 (Tưới cây)</label>
-                                    <span class="text-xs text-slate-400 block" id="lbl-schedule-status-ch4">Đang tải...</span>
-                                    <p id="schedule-summary-ch4" class="text-xs text-slate-500 mt-2">...</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-slate-400 mb-1">Giờ bật (ON)</label>
-                                    <input type="time" id="time-on-ch4" class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-3 py-1.5 text-white focus:outline-none focus:border-sky-400">
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-slate-400 mb-1">Giờ tắt (OFF)</label>
-                                    <input type="time" id="time-off-ch4" class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-3 py-1.5 text-white focus:outline-none focus:border-sky-400">
-                                </div>
-                                <div class="flex gap-2">
-                                    <button id="btn-save-sch-ch4" class="flex-1 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-2xl transition text-sm">Lưu</button>
-                                    <button id="btn-toggle-sch-ch4" class="px-3 py-1.5 bg-slate-800 text-white rounded-2xl transition text-sm">Bật</button>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
