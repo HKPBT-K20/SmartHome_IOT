@@ -79,7 +79,29 @@
         body.light-theme #mode-toggle:hover,
         body.light-theme #sidebar-toggle:hover,
         body.light-theme #mobile-sidebar-toggle:hover {
-            filter: brightness(1.08);
+            filter: brightness(1.16);
+        }
+
+        body.light-theme .bg-slate-800:hover,
+        body.light-theme .bg-slate-800\/80:hover,
+        body.light-theme .bg-slate-800\/85:hover,
+        body.light-theme .hover\:bg-slate-800:hover,
+        body.light-theme .hover\:bg-slate-700:hover,
+        body.light-theme .nav-btn:hover,
+        body.light-theme #mode-toggle:hover,
+        body.light-theme #sidebar-toggle:hover,
+        body.light-theme #mobile-sidebar-toggle:hover {
+            background-color: rgba(241, 245, 249, 0.98) !important;
+            color: #0f172a !important;
+            border-color: rgba(148, 163, 184, 0.4) !important;
+        }
+
+        body.light-theme .nav-btn:hover {
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+        }
+
+        body.light-theme .divide-slate-700 > :not([hidden]) ~ :not([hidden]) {
+            border-color: rgba(203, 213, 225, 0.7) !important;
         }
 
         #weather-widget {
@@ -181,13 +203,54 @@
         }
 
         body.light-theme #btn-toggle-alarm {
-            background: rgba(15, 23, 42, 0.92) !important;
-            color: #f8fafc !important;
-            border: 1px solid rgba(15, 23, 42, 0.18) !important;
+            background: rgba(239, 68, 68, 0.95) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(220, 38, 38, 0.38) !important;
+            box-shadow: 0 10px 24px rgba(239, 68, 68, 0.16) !important;
         }
 
         body.light-theme #btn-toggle-alarm:hover {
-            background: rgba(30, 41, 59, 0.95) !important;
+            background: rgba(220, 38, 38, 0.98) !important;
+            color: #ffffff !important;
+        }
+
+        body.light-theme #btn-clear-logs {
+            background: rgba(220, 38, 38, 0.95) !important;
+            color: #ffffff !important;
+            border-color: rgba(185, 28, 28, 0.35) !important;
+            box-shadow: 0 8px 20px rgba(220, 38, 38, 0.14) !important;
+        }
+
+        body.light-theme #btn-clear-logs:hover {
+            background: rgba(185, 28, 28, 0.98) !important;
+            color: #ffffff !important;
+        }
+
+        @keyframes security-alert-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        body.light-theme .security-alert-active {
+            border-color: rgba(239, 68, 68, 0.48) !important;
+            box-shadow: 0 18px 40px rgba(239, 68, 68, 0.14) !important;
+            animation: security-alert-float 1.35s ease-in-out infinite;
+        }
+
+        body.light-theme .security-alert-active #div-motion-bg {
+            background: rgba(254, 242, 242, 0.95) !important;
+            border-color: rgba(248, 113, 113, 0.45) !important;
+        }
+
+        body.light-theme #btn-clear-alarm {
+            background: rgba(255, 255, 255, 0.95) !important;
+            color: #ef4444 !important;
+            border-color: rgba(248, 113, 113, 0.35) !important;
+        }
+
+        body.light-theme #btn-clear-alarm:hover {
+            background: rgba(254, 242, 242, 0.98) !important;
+            color: #dc2626 !important;
         }
 
         body.light-theme .panel-card {
@@ -283,32 +346,30 @@
         </aside>
 
         <div class="flex-1 min-w-0 flex flex-col overflow-hidden">
-            <header class="bg-slate-950/90 border-b border-slate-800 px-4 md:px-6 py-4 flex justify-between items-center sticky top-0 z-10 backdrop-blur-xl">
-                <div class="flex items-center gap-3 min-w-0">
-                    <button id="mobile-sidebar-toggle" class="text-slate-200 bg-slate-800/80 hover:bg-slate-700 px-3 py-2 rounded-full transition flex md:hidden items-center gap-2" aria-label="Mở menu">
+            <header class="bg-slate-950/90 border-b border-slate-800 px-4 md:px-6 py-4 flex flex-col gap-3 md:flex-row md:justify-between md:items-center sticky top-0 z-10 backdrop-blur-xl">
+                <div class="flex items-center gap-2 sm:gap-3 min-w-0 w-full md:w-auto">
+                    <button id="mobile-sidebar-toggle" class="text-slate-200 bg-slate-800/80 hover:bg-slate-700 px-2.5 py-2 rounded-full transition flex md:hidden items-center gap-2 shrink-0" aria-label="Mở menu">
                         <i class="fa-solid fa-bars text-lg"></i>
                     </button>
-                    <button id="sidebar-toggle" class="text-slate-200 bg-slate-800/80 hover:bg-slate-700 px-3 py-2 rounded-full transition hidden md:flex items-center gap-2">
-                        <i class="fa-solid fa-arrows-left-right"></i>
-                        <span class="text-sm">Thu menu</span>
+                    <button id="sidebar-toggle" class="text-slate-200 bg-slate-800/80 hover:bg-slate-700 px-3 py-2 rounded-full transition hidden md:flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-bars text-lg"></i>
                     </button>
-                    <h2 id="current-page-title" class="text-lg md:text-xl font-semibold text-white truncate">Tổng quan hệ thống</h2>
+                    <h2 id="current-page-title" class="text-sm sm:text-base md:text-xl font-semibold text-white min-w-0 flex-1 md:flex-none leading-tight truncate">Tổng quan hệ thống</h2>
                 </div>
-                <div class="flex items-center gap-3 flex-wrap justify-end">
-                    <button id="mode-toggle" class="flex items-center gap-2 px-4 py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 rounded-full transition">
+                <div class="flex items-center gap-2 md:gap-3 flex-wrap justify-start md:justify-end w-full md:w-auto">
+                    <button id="mode-toggle" class="flex items-center justify-center px-3 py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 rounded-full transition shrink-0">
                         <i class="fa-solid fa-sun" id="mode-toggle-icon"></i>
-                        <span id="mode-toggle-label">Chế độ tối</span>
                     </button>
                     <div class="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/80 border border-slate-700 text-sm text-slate-300">
                         <i class="fa-solid fa-user text-sky-300"></i>
                         <span id="auth-user-label">Chưa đăng nhập</span>
                     </div>
-                    <button id="logout-button" class="px-4 py-2 rounded-full bg-rose-600/15 hover:bg-rose-600 text-rose-200 hover:text-white border border-rose-500/30 text-sm font-medium transition">
+                    <button id="logout-button" class="px-3 md:px-4 py-2 rounded-full bg-rose-600/15 hover:bg-rose-600 text-rose-200 hover:text-white border border-rose-500/30 text-sm font-medium transition shrink-0">
                         Đăng xuất
                     </button>
-                    <div id="weather-widget" class="flex items-center gap-3 bg-slate-900/80 px-4 py-2 rounded-full text-sm border border-slate-700">
+                    <div id="weather-widget" class="flex items-center gap-2 bg-slate-900/80 px-3 md:px-4 py-2 rounded-full text-xs md:text-sm border border-slate-700 w-full md:w-auto min-w-0">
                         <i class="fa-solid fa-cloud-sun text-sky-300"></i>
-                        <span id="weather-info">Đang tải dữ liệu thời tiết...</span>
+                        <span id="weather-info" class="leading-tight min-w-0">Đang tải dữ liệu thời tiết...</span>
                     </div>
                 </div>
             </header>

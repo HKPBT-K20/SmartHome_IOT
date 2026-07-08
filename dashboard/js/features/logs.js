@@ -39,6 +39,7 @@ function normalizeLogEntry(log = {}) {
 function renderLogRows(logs) {
     const tableDashboard = document.getElementById("table-access-log");
     const tableFullLogs = document.getElementById("table-full-logs");
+    const isLightTheme = document.body.classList.contains("light-theme");
 
     if (!logs || Object.keys(logs).length === 0) {
         const emptyRow = '<tr><td colspan="4" class="px-6 py-4 text-center text-slate-500">Chưa có dữ liệu lịch sử ra vào.</td></tr>';
@@ -57,17 +58,24 @@ function renderLogRows(logs) {
     logEntries.forEach((log, index) => {
         const isSuccess = log.status === "Success" || log.status === "Granted" || log.status === "Allow";
         const statusStyle = isSuccess
-            ? "text-emerald-400 bg-emerald-500/10"
-            : "text-red-400 bg-red-500/10";
+            ? isLightTheme
+                ? "text-emerald-700 bg-emerald-500/15"
+                : "text-emerald-400 bg-emerald-500/10"
+            : isLightTheme
+                ? "text-rose-700 bg-rose-500/15"
+                : "text-red-400 bg-red-500/10";
         const iconType = log.method === "RFID"
             ? "fa-id-card text-purple-400"
             : "fa-fingerprint text-blue-400";
+        const rowClass = isLightTheme
+            ? "hover:bg-slate-100/90 border-b border-slate-200/80 text-slate-800"
+            : "hover:bg-slate-900/80 border-b border-slate-700/60";
 
         const rowHtml = `
-            <tr class="hover:bg-slate-900/80 border-b border-slate-700/60">
-                <td class="px-6 py-4 text-slate-300 font-mono text-xs">${log.displayTime ?? "--"}</td>
+            <tr class="${rowClass}">
+                <td class="px-6 py-4 font-mono text-xs ${isLightTheme ? "text-slate-700" : "text-slate-300"}">${log.displayTime ?? "--"}</td>
                 <td class="px-6 py-4 font-medium"><i class="fa-solid ${iconType} mr-2"></i>${log.method ?? "--"}</td>
-                <td class="px-6 py-4 text-slate-300">${log.user ?? "--"}</td>
+                <td class="px-6 py-4 ${isLightTheme ? "text-slate-700" : "text-slate-300"}">${log.user ?? "--"}</td>
                 <td class="px-6 py-4">
                     <span class="px-2 py-1 rounded text-xs font-semibold ${statusStyle}">${log.status ?? "--"}</span>
                 </td>
@@ -108,6 +116,8 @@ export function initLogsFeature() {
             refreshLogsView();
         });
     }
+
+    document.addEventListener("smarthome-theme-changed", refreshLogsView);
 
     btnClearLogs?.addEventListener("click", async () => {
         const confirmed = await confirmAction({

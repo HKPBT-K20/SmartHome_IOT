@@ -1,5 +1,6 @@
 #include <Wire.h>
 #include <RTClib.h>
+#include <DHT.h>
 #include "types.h"
 
 // =====================================================
@@ -8,8 +9,11 @@
 
 #define LM35_PIN 34
 #define CDS_PIN  36  // GPIO 36 (VP) — dời từ 35 để nhường cho PIR
+#define DHT_PIN  26
+#define DHT_TYPE  DHT11
 
 RTC_DS1307 rtc;
+DHT dht(DHT_PIN, DHT_TYPE);
 
 // Shared with other modules
 int currentHour = 0;
@@ -21,6 +25,7 @@ int currentHour = 0;
 void setupSensors() {
 
   analogReadResolution(12);
+  dht.begin();
 
   Serial.println("Sensor module ready.");
 }
@@ -72,6 +77,20 @@ float readTemperature() {
 int readLightLevel() {
 
   return analogRead(CDS_PIN);
+}
+
+// =====================================================
+// Air Humidity Sensor (DHT11)
+// =====================================================
+
+bool readHumidity(float &humidity) {
+  float value = dht.readHumidity();
+  if (isnan(value) || value < 0.0f || value > 100.0f) {
+    return false;
+  }
+
+  humidity = value;
+  return true;
 }
 
 // =====================================================

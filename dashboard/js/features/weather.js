@@ -62,15 +62,24 @@ export function initWeatherWidget() {
     function renderWeather({ label, temperature, code }) {
         const meta = WEATHER_META[code] || { icon: "fa-cloud", text: "Thời tiết" };
         const tempText = Number.isFinite(temperature) ? `${temperature.toFixed(1)}°C` : "--°C";
+        const isMobile = window.matchMedia("(max-width: 767px)").matches;
 
-        weatherInfo.innerHTML = `
-            <span class="inline-flex items-center gap-2">
-                <i class="fa-solid ${meta.icon} text-sky-300"></i>
-                <span class="font-medium text-slate-100">${label}</span>
-            </span>
-            <span class="text-slate-300">${tempText}</span>
-            <span class="text-slate-400">${meta.text}</span>
-        `;
+        weatherInfo.innerHTML = isMobile
+            ? `
+                <span class="inline-flex items-center gap-2 min-w-0">
+                    <i class="fa-solid ${meta.icon} text-sky-300 shrink-0"></i>
+                    <span class="font-medium text-slate-100 truncate max-w-[9rem]">${tempText}</span>
+                    <span class="text-slate-400 whitespace-nowrap">· ${meta.text}</span>
+                </span>
+            `
+            : `
+                <span class="inline-flex items-center gap-2">
+                    <i class="fa-solid ${meta.icon} text-sky-300"></i>
+                    <span class="font-medium text-slate-100">${label}</span>
+                </span>
+                <span class="text-slate-300">${tempText}</span>
+                <span class="text-slate-400">${meta.text}</span>
+            `;
     }
 
     async function fetchWeather(latitude, longitude, label) {

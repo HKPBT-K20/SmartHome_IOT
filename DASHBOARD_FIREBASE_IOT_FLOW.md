@@ -328,9 +328,25 @@ Firmware định kỳ push:
 
 - nhiệt độ
 - ánh sáng
+- độ ẩm không khí
 - thời gian
 
 Dashboard hiển thị realtime theo `/sensors`.
+
+Hiện firmware đọc:
+
+- `LM35` để đo nhiệt độ
+- `CDS/LDR` để đo ánh sáng
+- `DHT11` để đo độ ẩm không khí
+
+Luồng sensor:
+
+1. `setupSensors()` khởi tạo `dht.begin()`.
+2. `readTemperature()` đọc LM35.
+3. `readLightLevel()` đọc CDS.
+4. `readHumidity()` đọc DHT11.
+5. `pushSensors()` đẩy `/sensors/temp`, `/sensors/light`, `/sensors/humidity`, `/sensors/time` lên Firebase.
+6. Dashboard nghe `/sensors` và cập nhật ô độ ẩm.
 
 ### 6.8 Weather
 
@@ -349,6 +365,7 @@ Schema nên hiểu như sau:
 /sensors
   temp
   light
+  humidity
   time
 
 /relay
@@ -466,4 +483,3 @@ Nếu muốn mở rộng thêm tính năng, chỉ cần:
 - thêm UI trên dashboard
 - thêm node dữ liệu tương ứng trong Firebase
 - thêm logic đọc/ghi trong firmware
-

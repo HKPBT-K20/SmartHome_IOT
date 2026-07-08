@@ -60,6 +60,7 @@ SmartHome_IOT/
 | Servo SG90 | PWM | **GPIO 26** | Mô phỏng khóa cửa (0°=mở, 90°=đóng) |
 | LM35 | ADC | GPIO 34 | Input only, 12-bit ADC |
 | Quang trở CDS | ADC | GPIO 35 | Chia áp điện trở 10K |
+| DHT11 | Digital | GPIO 26 | Độ ẩm không khí |
 | PIR HC-SR501 | Interrupt | GPIO 13 | RISING edge, debounce 500ms |
 | Relay 4 kênh | Digital | GPIO 32, 33, 18, 23 | LOW = bật, HIGH = tắt |
 | Keypad 4x4 Rows | Digital | GPIO 12, 15, 2, 0 | Cẩn thận GPIO 0 (boot) |
@@ -99,6 +100,7 @@ Vào **Sketch → Include Library → Manage Libraries**, cài các thư viện 
 | IRremoteESP8266 | Remote hồng ngoại | crankyoldgit |
 | Firebase ESP32 Client | Firebase | mobizt |
 | **ArduinoJson** | **Parse JSON thời tiết** | **Benoit Blanchon** |
+| **DHT sensor library** | **DHT11 độ ẩm không khí** | **Adafruit** |
 | MD_MAX72XX + MD_Parola | Matrix LED (nếu dùng) | MajicDesigns |
 
 ### 3. Cấu hình dự án

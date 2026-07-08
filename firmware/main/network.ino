@@ -233,6 +233,8 @@ void pushSensors() {
 
   float temp  = readTemperature();
   int   light = readLightLevel();
+  float humidity = 0.0f;
+  bool  hasHumidity = readHumidity(humidity);
   char  timeStr[20];
   getTimeString(timeStr);
 
@@ -240,9 +242,16 @@ void pushSensors() {
   ok &= Firebase.setFloat (fbdo, "/sensors/temp",  temp);
   ok &= Firebase.setInt   (fbdo, "/sensors/light", light);
   ok &= Firebase.setString(fbdo, "/sensors/time",  timeStr);
+  if (hasHumidity) {
+    ok &= Firebase.setFloat(fbdo, "/sensors/humidity", humidity);
+  }
 
   if (ok) {
-    Serial.printf("Sensors pushed: %.1f C, light=%d\n", temp, light);
+    if (hasHumidity) {
+      Serial.printf("Sensors pushed: %.1f C, light=%d, humidity=%.1f%%\n", temp, light, humidity);
+    } else {
+      Serial.printf("Sensors pushed: %.1f C, light=%d, humidity=N/A\n", temp, light);
+    }
   } else {
     Serial.println("Sensor push error: " + fbdo.errorReason());
   }

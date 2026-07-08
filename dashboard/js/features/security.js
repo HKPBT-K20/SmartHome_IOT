@@ -17,32 +17,62 @@ function renderSecurityUi(security) {
     const btnClearAlarm = document.getElementById("btn-clear-alarm");
     const btnToggleAlarm = document.getElementById("btn-toggle-alarm");
     const btnSaveSecurityMode = document.getElementById("btn-save-security-mode");
+    const securityCard = document.querySelector("#page-security .panel-card");
 
     const state = security || {};
     const motionDetected = Boolean(state.motion_detected);
     const alarmActive = Boolean(state.alarm_status);
     const mode = state.mode || "always";
+    const isLightTheme = document.body.classList.contains("light-theme");
+
+    if (securityCard) {
+        securityCard.classList.toggle("security-alert-active", alarmActive || motionDetected);
+    }
 
     if (divMotionBg) {
-        divMotionBg.className = motionDetected
-            ? "p-4 rounded-3xl bg-rose-500/15 flex items-center gap-4 border border-rose-500/30 animate-pulse"
-            : "p-4 rounded-3xl bg-slate-900/70 flex items-center gap-4 border border-slate-700/60";
+        if (motionDetected) {
+            divMotionBg.className = isLightTheme
+                ? "p-4 rounded-3xl bg-sky-500/10 flex items-center gap-4 border border-sky-300/60 animate-pulse"
+                : "p-4 rounded-3xl bg-rose-500/15 flex items-center gap-4 border border-rose-500/30 animate-pulse";
+        } else {
+            divMotionBg.className = isLightTheme
+                ? "p-4 rounded-3xl bg-white/90 flex items-center gap-4 border border-slate-200/90"
+                : "p-4 rounded-3xl bg-slate-900/70 flex items-center gap-4 border border-slate-700/60";
+        }
     }
     if (iconMotion) {
-        iconMotion.className = motionDetected ? "text-2xl text-rose-400" : "text-2xl text-slate-400";
+        iconMotion.className = motionDetected
+            ? isLightTheme
+                ? "text-2xl text-sky-500"
+                : "text-2xl text-rose-400"
+            : isLightTheme
+                ? "text-2xl text-slate-500"
+                : "text-2xl text-slate-400";
     }
     if (lblMotionStatus) {
         lblMotionStatus.innerText = motionDetected
             ? "Có chuyển động - PIR đang kích hoạt"
             : "Không phát hiện chuyển động";
-        lblMotionStatus.className = motionDetected ? "font-bold text-rose-300" : "text-sm text-slate-400";
+        lblMotionStatus.className = motionDetected
+            ? isLightTheme
+                ? "font-bold text-sky-700"
+                : "font-bold text-rose-300"
+            : isLightTheme
+                ? "text-sm text-slate-600"
+                : "text-sm text-slate-400";
     }
 
     if (btnToggleAlarm) {
         btnToggleAlarm.innerText = alarmActive ? "CÒI ĐANG HÚ (BẤM ĐỂ TẮT)" : "HỆ THỐNG AN TOÀN";
-        btnToggleAlarm.className = alarmActive
-            ? "w-full py-3 bg-rose-600 text-white font-bold rounded-2xl transition shadow-lg shadow-rose-600/25 animate-bounce"
-            : "w-full py-3 bg-slate-800 text-slate-300 font-bold rounded-2xl cursor-pointer hover:bg-slate-700 transition";
+        if (alarmActive) {
+            btnToggleAlarm.className = isLightTheme
+                ? "w-full py-3 bg-rose-500 text-white font-bold rounded-2xl transition shadow-lg shadow-rose-500/25 animate-bounce"
+                : "w-full py-3 bg-rose-600 text-white font-bold rounded-2xl transition shadow-lg shadow-rose-600/25 animate-bounce";
+        } else {
+            btnToggleAlarm.className = isLightTheme
+                ? "w-full py-3 bg-rose-500 text-white font-bold rounded-2xl cursor-pointer hover:bg-rose-400 border border-rose-400/40 transition shadow-lg shadow-rose-500/15"
+                : "w-full py-3 bg-slate-800 text-slate-300 font-bold rounded-2xl cursor-pointer hover:bg-slate-700 transition";
+        }
         btnToggleAlarm.dataset.active = alarmActive ? "true" : "false";
     }
     if (lblAlarmStatus) {
@@ -52,10 +82,16 @@ function renderSecurityUi(security) {
                 ? "Hệ thống còi hú: ĐANG BẬT"
                 : "Hệ thống còi hú: Bình thường";
         lblAlarmStatus.className = motionDetected
-            ? "text-xs text-rose-300 font-semibold mt-1 animate-pulse"
+            ? isLightTheme
+                ? "text-xs text-sky-700 font-semibold mt-1 animate-pulse"
+                : "text-xs text-rose-300 font-semibold mt-1 animate-pulse"
             : alarmActive
-                ? "text-xs text-rose-300 font-semibold mt-1"
-                : "text-xs text-slate-500 mt-1";
+                ? isLightTheme
+                    ? "text-xs text-rose-500 font-semibold mt-1"
+                    : "text-xs text-rose-300 font-semibold mt-1"
+                : isLightTheme
+                    ? "text-xs text-slate-500 mt-1"
+                    : "text-xs text-slate-500 mt-1";
     }
     btnClearAlarm?.classList.toggle("hidden", !alarmActive);
 

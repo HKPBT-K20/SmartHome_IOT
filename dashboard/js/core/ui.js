@@ -199,9 +199,7 @@ export function applySidebarState(collapsed) {
     document.body.classList.remove("mobile-sidebar-open");
     document.body.classList.toggle("sidebar-collapsed", collapsed);
     if (sidebarToggle) {
-        sidebarToggle.innerHTML = collapsed
-            ? '<i class="fa-solid fa-arrows-right-left"></i><span class="text-sm">Hiện menu</span>'
-            : '<i class="fa-solid fa-arrows-left-right"></i><span class="text-sm">Thu menu</span>';
+        sidebarToggle.innerHTML = '<i class="fa-solid fa-bars text-lg"></i>';
     }
     localStorage.setItem("sidebarCollapsed", String(collapsed));
 }
@@ -213,7 +211,6 @@ export function setMobileSidebarOpen(open) {
 export function applyTheme(theme) {
     const modeToggle = document.getElementById("mode-toggle");
     const modeToggleIcon = document.getElementById("mode-toggle-icon");
-    const modeToggleLabel = document.getElementById("mode-toggle-label");
     const isLight = theme === "light";
 
     document.body.classList.toggle("light-theme", isLight);
@@ -221,13 +218,12 @@ export function applyTheme(theme) {
 
     if (isLight) {
         modeToggleIcon && (modeToggleIcon.className = "fa-solid fa-moon");
-        modeToggleLabel && (modeToggleLabel.innerText = "Chế độ sáng");
-        modeToggle && (modeToggle.className = "flex items-center gap-2 px-4 py-2 bg-white/90 hover:bg-slate-100 text-slate-900 rounded-full border border-slate-200 shadow-sm transition");
+        modeToggle && (modeToggle.className = "flex items-center justify-center px-4 py-2 bg-white/90 hover:bg-white text-slate-900 rounded-full border border-slate-200 shadow-sm transition");
     } else {
         modeToggleIcon && (modeToggleIcon.className = "fa-solid fa-sun");
-        modeToggleLabel && (modeToggleLabel.innerText = "Chế độ tối");
-        modeToggle && (modeToggle.className = "flex items-center gap-2 px-4 py-2 bg-slate-800/85 hover:bg-slate-700 text-slate-100 rounded-full border border-slate-700/70 shadow-sm transition");
+        modeToggle && (modeToggle.className = "flex items-center justify-center px-4 py-2 bg-slate-800/85 hover:bg-slate-700 text-slate-100 rounded-full border border-slate-700/70 shadow-sm transition");
     }
 
     localStorage.setItem("dashboardTheme", theme);
+    document.dispatchEvent(new CustomEvent("smarthome-theme-changed", { detail: { theme } }));
 }
