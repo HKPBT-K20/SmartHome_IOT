@@ -26,7 +26,7 @@ export { ref, onValue, set, update, remove };
 
 export const MOCK_ACCOUNT = {
     email: "hkpbSmartHome@gmail.com",
-    password: "hkpbSmartHome@gmail.com",
+    password: "admin123",
     displayName: "HKPB Demo"
 };
 
