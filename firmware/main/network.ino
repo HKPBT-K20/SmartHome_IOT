@@ -19,13 +19,6 @@ extern bool      relayState[3];
 extern char      securityMode[16];
 void pushRelayState(int ch, bool on);
 
-struct RelayScheduleConfig {
-  char onTime[6];
-  char offTime[6];
-  bool enabled;
-  bool valid;
-};
-
 static RelayScheduleConfig relaySchedules[3] = {
   {{0}, {0}, false, false},
   {{0}, {0}, false, false},

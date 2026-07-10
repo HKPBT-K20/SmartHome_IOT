@@ -19,14 +19,13 @@ unsigned long motionDetectedUntil = 0;
 void pushSecurityMotion(bool detected);
 
 // ── RFID ──────────────────────────────────────────────────────
-// SS=5, RST=3V3 (cắm thẳng nguồn, không dùng GPIO → RST_PIN=-1)
-// SCK=18, MOSI=23, MISO=19 (SPI mặc định ESP32)
+// SS=5, RST=3V3 | SCK=18, MOSI=19, MISO=23 (đã hoán đổi so với default ESP32)
 #define SS_PIN  5
-#define RST_PIN -1
+#define RST_PIN -1  // RST cắm thẳng vào 3V3, soft reset qua SPI
 MFRC522 rfid(SS_PIN, RST_PIN);
 
 // UID thẻ phải viết đúng hex: chỉ gồm 0-9 và A-F
-String validUIDs[] = {"A1B2C3D4", "E5F60718"};
+String validUIDs[] = {"4362F506"};
 int    uidCount    = sizeof(validUIDs) / sizeof(validUIDs[0]);
 
 // ── KEYPAD ────────────────────────────────────────────────────
@@ -56,12 +55,29 @@ bool      newLogAvailable = false;
 
 // ── SETUP ─────────────────────────────────────────────────────
 void setupSecurity() {
-  SPI.begin();
+  SPI.begin(18, 23, 19, SS_PIN);  // MOSI=19, MISO=23 (dây thực tế bị hoán đổi)
   rfid.PCD_Init();
+  delay(50);
+
+  // Clone FM17522 (0x82) không tự bật TX trong PCD_Init() — phải force-enable
+  byte txCtrl = rfid.PCD_ReadRegister(MFRC522::TxControlReg);
+  if ((txCtrl & 0x03) != 0x03) {
+    rfid.PCD_WriteRegister(MFRC522::TxControlReg, txCtrl | 0x03);
+  }
+  rfid.PCD_SetAntennaGain(rfid.RxGain_max);
+
+  byte ver = rfid.PCD_ReadRegister(MFRC522::VersionReg);
+  if (ver == 0x00 || ver == 0xFF) {
+    Serial.println("ERROR: RFID RC522 not detected — check SPI wiring (SCK=18, MOSI=23, MISO=19, SS=5)");
+  } else {
+    Serial.print("RFID RC522 detected, firmware version: 0x");
+    Serial.println(ver, HEX);  // 0x91 hoặc 0x92 là bình thường
+  }
+
   keypad.setDebounceTime(5);
   keypad.setHoldTime(500);
 
-  pinMode(PIR_PIN, INPUT_PULLDOWN);
+  pinMode(PIR_PIN, INPUT);  // GPIO 35: input-only, không có internal PD — PIR HC-SR501 tự drive output
 
   Serial.println("Security module ready");
 }

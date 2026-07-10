@@ -30,9 +30,9 @@ void setupActuator() {
   relayState[1] = false;
   relayState[2] = false;
 
-  // Cấp phát Timer phần cứng ESP32 cho PWM của Servo
-  ESP32PWM::allocateTimer(0);
-  ESP32PWM::allocateTimer(1);
+  // Timer 2 & 3 — tránh xung đột với WiFi/BT stack chiếm Timer 0 & 1
+  ESP32PWM::allocateTimer(2);
+  ESP32PWM::allocateTimer(3);
   doorServo.setPeriodHertz(50); // Servo tiêu chuẩn 50Hz
   doorServo.attach(SERVO_PIN, 500, 2400);
   doorServo.write(90); // Ban đầu: 90° (Cửa đóng)

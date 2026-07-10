@@ -21,4 +21,11 @@ struct AccessLog {
   bool     granted;           // true hoặc false
 };
 
+struct RelayScheduleConfig {
+  char onTime[6];
+  char offTime[6];
+  bool enabled;
+  bool valid;
+};
+
 #endif // TYPES_H
