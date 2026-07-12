@@ -8,7 +8,7 @@ import { showToast } from "../core/ui.js";
 
 const RELAYS = [
     { ch: 1, relayKey: "ch1", commandKey: "relay_1", label: "Đèn phòng làm việc" },
-    { ch: 2, relayKey: "ch2", commandKey: "relay_2", label: "Đèn phòng khách" }
+    { ch: 3, relayKey: "ch3", commandKey: "relay_3", label: "Đèn phòng khách" }
 ];
 
 function setMetric(id, value, suffix = "") {

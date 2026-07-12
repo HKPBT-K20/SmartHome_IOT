@@ -14,10 +14,10 @@ import {
     showToast
 } from "../core/ui.js";
 
-const CHANNELS = ["ch1", "ch2"];
+const CHANNELS = ["ch1", "ch3"];
 const LABELS = {
     ch1: "Đèn phòng làm việc",
-    ch2: "Đèn phòng khách"
+    ch3: "Đèn phòng khách"
 };
 
 function getScheduleElements(ch) {

@@ -142,15 +142,15 @@ File liên quan:
 Relay hiện tại là 2 đèn:
 
 - `ch1` = đèn phòng làm việc
-- `ch2` = đèn phòng khách
+- `ch3` = đèn phòng khách
 
 Luồng:
 
 1. Người dùng bấm ON/OFF trên dashboard.
-2. Dashboard ghi lệnh vào `/commands/relay_1` hoặc `/commands/relay_2`.
+2. Dashboard ghi lệnh vào `/commands/relay_1` hoặc `/commands/relay_3`.
 3. Firmware `listenCommands()` đọc lệnh mỗi 5 giây.
 4. Firmware gọi `setRelay(...)`.
-5. Firmware push trạng thái thật lên `/relay/ch1` hoặc `/relay/ch2`.
+5. Firmware push trạng thái thật lên `/relay/ch1` hoặc `/relay/ch3`.
 6. Dashboard nghe `/relay` và cập nhật nút trạng thái.
 
 ### 6.2 Hẹn Giờ Tự Động
@@ -165,7 +165,7 @@ File liên quan:
 Hiện dashboard chỉ giữ 2 đèn:
 
 - `ch1`
-- `ch2`
+- `ch3`
 
 Người dùng có thể:
 
@@ -177,7 +177,7 @@ Người dùng có thể:
 Schema lưu trên Firebase:
 
 - `/schedules/ch1`
-- `/schedules/ch2`
+- `/schedules/ch3`
 
 Các field chính:
 
@@ -370,11 +370,11 @@ Schema nên hiểu như sau:
 
 /relay
   ch1
-  ch2
+  ch3
 
 /commands
   relay_1
-  relay_2
+  relay_3
 
 /schedules
   ch1
@@ -382,7 +382,7 @@ Schema nên hiểu như sau:
     off_time
     enabled
     mode
-  ch2
+  ch3
     on_time
     off_time
     enabled

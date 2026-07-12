@@ -1,24 +1,30 @@
 #include "types.h"
 
-extern int  currentHour;      // sensor.ino
-extern bool newLogAvailable;  // security.ino
+extern int  currentHour;
+extern bool newLogAvailable;
 
-// ── millis() TIMERS ───────────────────────────────────────────
+extern void handleUnoCommunication();
+extern void updateTemperatureSensor();
+
 static unsigned long lastSensorPush   = 0;
 static unsigned long lastCmdPoll      = 0;
 
 void setup() {
   Serial.begin(115200);
+  Serial2.begin(9600, SERIAL_8N1, 16, 17);
   delay(1000);
   Serial.println("=== Smart Home Booting ===");
 
-  setupSensors();   // TV1: LM35, CDS, analogReadResolution
-  setupRTC();       // TV1: DS1307
-  setupDisplay();   // TV1: LCD I2C — Wire.begin() gọi bên trong
-  setupActuator();  // TV2: Servo, Relay, Buzzer
-  setupSecurity();  // TV2: SPI, RFID, Keypad + PIR polling
+  setupSensors();
+  setupRTC();
+  setupDisplay();
+  setupActuator();
+  setupSecurity();
 
-  setupFirebase();  // TV3: Firebase Realtime Database
+  setupFirebase();
+
+  extern unsigned long lastUnoMessageTime;
+  lastUnoMessageTime = millis();
 
   Serial.println("=== Boot complete ===");
 }
@@ -26,7 +32,9 @@ void setup() {
 void loop() {
   unsigned long now = millis();
 
-  // ── Luôn chạy mỗi vòng ──────────────────────────────────────
+  updateTemperatureSensor();
+  handleUnoCommunication();
+
   updateTime();
   checkRFID();
   checkKeypad();

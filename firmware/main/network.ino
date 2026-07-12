@@ -15,11 +15,12 @@ static bool firebaseReady = false;
 // Các biến này được định nghĩa trong security.ino
 extern AccessLog lastLog;
 extern bool      newLogAvailable;
-extern bool      relayState[3];
+extern bool      relayState[4];
 extern char      securityMode[16];
 void pushRelayState(int ch, bool on);
 
-static RelayScheduleConfig relaySchedules[3] = {
+static RelayScheduleConfig relaySchedules[4] = {
+  {{0}, {0}, false, false},
   {{0}, {0}, false, false},
   {{0}, {0}, false, false},
   {{0}, {0}, false, false}
@@ -109,7 +110,7 @@ static void syncSecurityMode() {
 
 static void syncScheduleChannel(int ch, int minutesOfDay) {
   if (!firebaseReady || !Firebase.ready()) return;
-  if (ch < 1 || ch > 2) return;
+  if (ch != 1 && ch != 3) return;
 
   char path[40];
   bool enabled = false;
@@ -215,7 +216,7 @@ void setupFirebase() {
 
   firebaseReady = true;
   pushRelayState(1, relayState[1]);
-  pushRelayState(2, relayState[2]);
+  pushRelayState(3, relayState[3]);
   Serial.println("Firebase ready");
 }
 
@@ -280,7 +281,6 @@ void pushAccessLog() {
   }
 }
 
-// Gọi khi PIR đổi trạng thái để dashboard cập nhật phần an ninh
 void pushSecurityMotion(bool detected) {
   if (!firebaseReady || !Firebase.ready()) return;
 
@@ -288,6 +288,16 @@ void pushSecurityMotion(bool detected) {
     Serial.println(String("Security motion pushed: ") + (detected ? "true" : "false"));
   } else {
     Serial.println("Security motion push error: " + fbdo.errorReason());
+  }
+}
+
+void pushUnoOnlineStatus(bool online) {
+  if (!firebaseReady || !Firebase.ready()) return;
+
+  if (Firebase.setBool(fbdo, "/security/uno_online", online)) {
+    Serial.println(String("Uno online status pushed: ") + (online ? "true" : "false"));
+  } else {
+    Serial.println("Uno online status push error: " + fbdo.errorReason());
   }
 }
 
@@ -303,9 +313,9 @@ void listenCommands() {
     pushRelayState(1, val);
   }
 
-  if (Firebase.getBool(fbdo, "/commands/relay_2", &val)) {
-    setRelay(2, val);
-    pushRelayState(2, val);
+  if (Firebase.getBool(fbdo, "/commands/relay_3", &val)) {
+    setRelay(3, val);
+    pushRelayState(3, val);
   }
 
   syncSecurityMode();
@@ -313,7 +323,7 @@ void listenCommands() {
   int minutesOfDay = 0;
   getCurrentMinutesOfDay(minutesOfDay);
   syncScheduleChannel(1, minutesOfDay);
-  syncScheduleChannel(2, minutesOfDay);
+  syncScheduleChannel(3, minutesOfDay);
 }
 
 // ── PUSH RELAY STATE ─────────────────────────────────────────
@@ -322,7 +332,7 @@ void pushRelayState(int ch, bool on) {
   if (!firebaseReady || !Firebase.ready()) return;
   if (ch == 1) {
     Firebase.setBool(fbdo, "/relay/ch1", on);
-  } else if (ch == 2) {
-    Firebase.setBool(fbdo, "/relay/ch2", on);
+  } else if (ch == 3) {
+    Firebase.setBool(fbdo, "/relay/ch3", on);
   }
 }

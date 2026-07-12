@@ -134,7 +134,7 @@ Mở `firmware/config.h` và điền thông tin thật:
   temp        → float
   light       → int
 /relay/
-  ch1..ch2    → bool
+  ch1, ch3    → bool
 /access_log/
   {timestamp}/
     uid       → string

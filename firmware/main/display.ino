@@ -32,11 +32,14 @@ void updateDisplay() {
   getTimeString(timeBuffer);
   float temperature = readTemperature();
 
-  // Ghi đè từng dòng thay vì lcd.clear() để tránh flicker
   lcd.setCursor(0, 0);
-  // Hiển thị HH:MM:SS (8 ký tự) + khoảng trắng pad
   for (int i = 0; i < 8; i++) lcd.print(timeBuffer[i]);
-  lcd.print("        "); // pad phần còn lại
+  extern bool unoOnline;
+  if (!unoOnline) {
+    lcd.print(" UNO ERR");
+  } else {
+    lcd.print("        ");
+  }
 
   lcd.setCursor(0, 1);
   lcd.print("T:");

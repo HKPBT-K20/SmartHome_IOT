@@ -15,20 +15,19 @@ Servo doorServo;
 
 bool          doorOpen     = false;
 unsigned long doorOpenedAt = 0;
-#define       DOOR_OPEN_MS 3000
+extern const unsigned long DOOR_OPEN_MS = 3000;
 
-bool relayState[3] = {false, false, false};
+bool relayState[4] = {false, false, false, false};
 
 void setupActuator() {
   pinMode(BUZZER,  OUTPUT);
   pinMode(RELAY_1, OUTPUT);
   pinMode(RELAY_2, OUTPUT);
 
-  // Mặc định ban đầu: Tắt Relay (LOW)
   digitalWrite(RELAY_1, LOW);
   digitalWrite(RELAY_2, LOW);
   relayState[1] = false;
-  relayState[2] = false;
+  relayState[3] = false;
 
   // Timer 2 & 3 — tránh xung đột với WiFi/BT stack chiếm Timer 0 & 1
   ESP32PWM::allocateTimer(2);
@@ -62,10 +61,9 @@ void closeDoor() {
 
 // Dùng chung — TV3 gọi khi nhận lệnh từ Firebase
 void setRelay(int ch, bool on) {
-  int pins[] = {0, RELAY_1, RELAY_2};
-  if (ch < 1 || ch > 2) return;
+  int pins[] = {0, RELAY_1, 0, RELAY_2};
+  if (ch != 1 && ch != 3) return;
   if (relayState[ch] == on) return;
-  // Đã sửa logic: on = true -> HIGH (bật đèn), on = false -> LOW (tắt đèn)
   digitalWrite(pins[ch], on ? HIGH : LOW);
   relayState[ch] = on;
   Serial.println("Relay " + String(ch) + ": " + (on ? "ON" : "OFF"));

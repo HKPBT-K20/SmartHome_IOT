@@ -8,24 +8,28 @@
 // =====================================================
 
 #define LM35_PIN 34
-#define CDS_PIN  36  // GPIO 36 (VP) — dời từ 35 để nhường cho PIR
 #define DHT_PIN  26
 #define DHT_TYPE  DHT11
 
 RTC_DS1307 rtc;
 DHT dht(DHT_PIN, DHT_TYPE);
 
-// Shared with other modules
 int currentHour = 0;
-
-// =====================================================
-// Initialization
-// =====================================================
+int currentLightLevel = 500;
+float cachedTemperature = 0.0f;
 
 void setupSensors() {
-
   analogReadResolution(12);
   dht.begin();
+
+  long sum = 0;
+  for (int i = 0; i < 50; i++) {
+    sum += analogRead(LM35_PIN);
+    delay(1);
+  }
+  int adcValue = sum / 50;
+  float milliVolt = adcValue * (3300.0 / 4095.0);
+  cachedTemperature = milliVolt / 10.0;
 
   Serial.println("Sensor module ready.");
 }
@@ -48,35 +52,33 @@ void setupRTC() {
 #endif
 }
 
-// =====================================================
-// Temperature Sensor (LM35)
-// =====================================================
+void updateTemperatureSensor() {
+  static unsigned long lastSampleTime = 0;
+  static long sum = 0;
+  static int sampleCount = 0;
 
-float readTemperature() {
-
-  long sum = 0;
-
-  // Average multiple samples to reduce ADC noise
-  for (int i = 0; i < 50; i++) {
+  unsigned long now = millis();
+  if (now - lastSampleTime >= 2) {
     sum += analogRead(LM35_PIN);
-    delay(1);
+    sampleCount++;
+    lastSampleTime = now;
+
+    if (sampleCount >= 50) {
+      int adcValue = sum / 50;
+      float milliVolt = adcValue * (3300.0 / 4095.0);
+      cachedTemperature = milliVolt / 10.0;
+      sum = 0;
+      sampleCount = 0;
+    }
   }
-
-  int adcValue = sum / 50;
-
-  float milliVolt = adcValue * (3300.0 / 4095.0);
-
-  // LM35 outputs 10mV per °C
-  return milliVolt / 10.0;
 }
 
-// =====================================================
-// Light Sensor (LDR)
-// =====================================================
+float readTemperature() {
+  return cachedTemperature;
+}
 
 int readLightLevel() {
-
-  return analogRead(CDS_PIN);
+  return currentLightLevel;
 }
 
 // =====================================================
