@@ -2,8 +2,8 @@
 #include <MFRC522.h>
 #include "types.h"
 
-#define PIR_COOLDOWN_NIGHT 30000
-#define PIR_COOLDOWN_DAY   300000
+#define PIR_COOLDOWN_NIGHT 5000
+#define PIR_COOLDOWN_DAY   5000
 #define PIR_ACTIVE_MS      5000
 
 char securityMode[16] = "always";

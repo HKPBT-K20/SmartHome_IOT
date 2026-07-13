@@ -1,5 +1,4 @@
 #include <Keypad.h>
-#include <SoftwareSerial.h>
 
 const byte ROWS = 4;
 const byte COLS = 4;
@@ -13,18 +12,16 @@ byte rowPins[ROWS] = {2, 3, 4, 5};
 byte colPins[COLS] = {6, 7, 8, 9};
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
-SoftwareSerial mySerial(11, 12);
-
 void setup() {
-  mySerial.begin(9600);
+  Serial.begin(9600);
   pinMode(10, INPUT);
 }
 
 void loop() {
   char key = keypad.getKey();
   if (key) {
-    mySerial.print("KEY:");
-    mySerial.println(key);
+    Serial.print("KEY:");
+    Serial.println(key);
   }
 
   unsigned long now = millis();
@@ -46,8 +43,8 @@ void loop() {
 
   if (confirmedState != lastSentPIR) {
     lastSentPIR = confirmedState;
-    mySerial.print("PIR:");
-    mySerial.println(lastSentPIR ? "1" : "0");
+    Serial.print("PIR:");
+    Serial.println(lastSentPIR ? "1" : "0");
   }
 
   static unsigned long lastSentTime = 0;
@@ -58,7 +55,7 @@ void loop() {
   if (abs(currentVal - lastSentLDR) >= 50 || (now - lastSentTime >= 5000)) {
     lastSentLDR = currentVal;
     lastSentTime = now;
-    mySerial.print("LDR:");
-    mySerial.println(currentVal);
+    Serial.print("LDR:");
+    Serial.println(currentVal);
   }
 }

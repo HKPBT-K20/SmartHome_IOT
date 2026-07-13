@@ -7,6 +7,7 @@ extern void handleUnoCommunication();
 extern void updateTemperatureSensor();
 
 static unsigned long lastSensorPush   = 0;
+static unsigned long lastAirPush      = 0;
 static unsigned long lastCmdPoll      = 0;
 
 void setup() {
@@ -43,7 +44,12 @@ void loop() {
   updateBuzzer();
   updateDisplay();
 
-  // ── Push sensor mỗi 30 giây ─────────────────────────────────
+  if (now - lastAirPush >= 5000) {
+    extern void pushAirQuality();
+    pushAirQuality();
+    lastAirPush = now;
+  }
+
   if (now - lastSensorPush >= 30000) {
     pushSensors();
     lastSensorPush = now;

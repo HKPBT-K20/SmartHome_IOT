@@ -78,13 +78,18 @@ static struct {
   unsigned long nextToggle = 0;
 } _buz;
 
-// Gọi để kích hoạt còi — trả về ngay, không block
 void alertBuzzer(int beeps = 3) {
   _buz.active     = true;
   _buz.beepsDone  = 0;
   _buz.beepsTotal = beeps;
   _buz.high       = false;
   _buz.nextToggle = millis();
+}
+
+void stopBuzzer() {
+  _buz.active     = false;
+  _buz.high       = false;
+  digitalWrite(BUZZER, LOW);
 }
 
 // Gọi mỗi vòng loop() — xử lý toggle không blocking

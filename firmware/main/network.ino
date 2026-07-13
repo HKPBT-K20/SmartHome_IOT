@@ -220,8 +220,23 @@ void setupFirebase() {
   Serial.println("Firebase ready");
 }
 
-// ── PUSH SENSORS ──────────────────────────────────────────────
-// Gọi mỗi 30 giây từ main loop
+void pushAirQuality() {
+  if (!firebaseReady || !Firebase.ready()) return;
+
+  extern int readAirQualityPPM();
+  int airVal = readAirQualityPPM();
+  if (Firebase.setInt(fbdo, "/sensors/air", airVal)) {
+    Serial.printf("Air quality pushed: %d PPM\n", airVal);
+  } else {
+    Serial.println("Air quality push error: " + fbdo.errorReason());
+  }
+
+  if (airVal > 600) {
+    extern void alertBuzzer(int beeps);
+    alertBuzzer(5);
+  }
+}
+
 void pushSensors() {
   if (!firebaseReady || !Firebase.ready()) return;
 
@@ -236,6 +251,7 @@ void pushSensors() {
   ok &= Firebase.setFloat (fbdo, "/sensors/temp",  temp);
   ok &= Firebase.setInt   (fbdo, "/sensors/light", light);
   ok &= Firebase.setString(fbdo, "/sensors/time",  timeStr);
+
   if (hasHumidity) {
     ok &= Firebase.setFloat(fbdo, "/sensors/humidity", humidity);
   }
@@ -319,6 +335,20 @@ void listenCommands() {
   }
 
   syncSecurityMode();
+
+  static bool lastAlarmStatus = false;
+  if (Firebase.getBool(fbdo, "/security/alarm_status", &val)) {
+    if (val != lastAlarmStatus) {
+      lastAlarmStatus = val;
+      extern void alertBuzzer(int beeps);
+      extern void stopBuzzer();
+      if (val) {
+        alertBuzzer(9999);
+      } else {
+        stopBuzzer();
+      }
+    }
+  }
 
   int minutesOfDay = 0;
   getCurrentMinutesOfDay(minutesOfDay);

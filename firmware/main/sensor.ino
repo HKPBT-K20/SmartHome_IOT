@@ -8,7 +8,7 @@
 // =====================================================
 
 #define LM35_PIN 34
-#define DHT_PIN  26
+#define DHT_PIN  27
 #define DHT_TYPE  DHT11
 
 RTC_DS1307 rtc;
@@ -127,4 +127,19 @@ void getTimeString(char *buffer) {
   int seconds = totalSeconds % 60;
   sprintf(buffer, "%02d:%02d:%02d 01/07/26", hours, minutes, seconds);
 #endif
+}
+
+int readAirQualityPPM() {
+  long sum = 0;
+  for (int i = 0; i < 50; i++) {
+    sum += analogRead(35);
+    delay(1);
+  }
+  int raw = sum / 50;
+  float voltage = raw * (3.3f / 4095.0f);
+  Serial.printf("[MQ-2 Debug] Raw ADC: %d, Voltage: %.2fV\n", raw, voltage);
+  float ppm = 400.0f + (voltage / 3.3f) * 1600.0f;
+  if (ppm < 350.0f) ppm = 350.0f;
+  if (ppm > 2000.0f) ppm = 2000.0f;
+  return (int)ppm;
 }
