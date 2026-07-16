@@ -41,21 +41,36 @@ void loop() {
     confirmedState = false;
   }
 
-  if (confirmedState != lastSentPIR) {
+  static unsigned long lastSentPIRTime = 0;
+  if (confirmedState != lastSentPIR || (now - lastSentPIRTime >= 5000)) {
     lastSentPIR = confirmedState;
+    lastSentPIRTime = now;
     Serial.print("PIR:");
     Serial.println(lastSentPIR ? "1" : "0");
   }
 
-  static unsigned long lastSentTime = 0;
-  static int lastSentLDR = -999;
-  int raw = analogRead(A0);
-  int currentVal = raw * 4;
-
-  if (abs(currentVal - lastSentLDR) >= 50 || (now - lastSentTime >= 5000)) {
-    lastSentLDR = currentVal;
-    lastSentTime = now;
+  static unsigned long lastSentLDRTime = 0;
+  if (now - lastSentLDRTime >= 5000) {
+    lastSentLDRTime = now;
+    int raw = analogRead(A0);
+    int currentVal = raw * 4;
     Serial.print("LDR:");
     Serial.println(currentVal);
   }
+
+  static unsigned long lastSentTempTime = 0;
+  if (now - lastSentTempTime >= 5000) {
+    lastSentTempTime = now;
+    long sum = 0;
+    for (int i = 0; i < 50; i++) {
+      sum += analogRead(A1);
+      delay(1);
+    }
+    float raw = sum / 50.0;
+    float mv = raw * (5000.0 / 1023.0);
+    float temp = mv / 10.0;
+    Serial.print("TEMP:");
+    Serial.println(temp, 1);
+  }
+
 }

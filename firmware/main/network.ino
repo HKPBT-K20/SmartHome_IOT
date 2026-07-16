@@ -217,6 +217,8 @@ void setupFirebase() {
   firebaseReady = true;
   pushRelayState(1, relayState[1]);
   pushRelayState(3, relayState[3]);
+  pushSecurityMotion(false);
+  pushSecurityAlarm(false);
   Serial.println("Firebase ready");
 }
 
@@ -231,7 +233,7 @@ void pushAirQuality() {
     Serial.println("Air quality push error: " + fbdo.errorReason());
   }
 
-  if (airVal > 600) {
+  if (airVal > 1210) {
     extern void alertBuzzer(int beeps);
     alertBuzzer(5);
   }
@@ -366,3 +368,10 @@ void pushRelayState(int ch, bool on) {
     Firebase.setBool(fbdo, "/relay/ch3", on);
   }
 }
+
+// ── PUSH SECURITY ALARM STATUS ───────────────────────────────
+void pushSecurityAlarm(bool active) {
+  if (!firebaseReady || !Firebase.ready()) return;
+  Firebase.setBool(fbdo, "/security/alarm_status", active);
+}
+

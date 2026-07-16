@@ -1,5 +1,6 @@
 // Phú: Relay, Còi, Servo cửa
 #include <ESP32Servo.h>
+#include "types.h"
 
 // ── PIN DEFINITIONS ───────────────────────────────────────────
 // SERVO: GPIO 25
@@ -33,8 +34,8 @@ void setupActuator() {
   ESP32PWM::allocateTimer(2);
   ESP32PWM::allocateTimer(3);
   doorServo.setPeriodHertz(50); // Servo tiêu chuẩn 50Hz
+  doorServo.write(90); // Ban đầu: 90° (Cửa đóng) - Thiết lập trước để tránh giật/mở cửa khi reset
   doorServo.attach(SERVO_PIN, 500, 2400);
-  doorServo.write(90); // Ban đầu: 90° (Cửa đóng)
   
   Serial.println("Actuator module ready");
 }
@@ -78,7 +79,7 @@ static struct {
   unsigned long nextToggle = 0;
 } _buz;
 
-void alertBuzzer(int beeps = 3) {
+void alertBuzzer(int beeps) {
   _buz.active     = true;
   _buz.beepsDone  = 0;
   _buz.beepsTotal = beeps;

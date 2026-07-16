@@ -2,8 +2,8 @@
 #include <MFRC522.h>
 #include "types.h"
 
-#define PIR_COOLDOWN_NIGHT 5000
-#define PIR_COOLDOWN_DAY   5000
+#define PIR_COOLDOWN_NIGHT 30000
+#define PIR_COOLDOWN_DAY   300000
 #define PIR_ACTIVE_MS      5000
 
 char securityMode[16] = "always";
@@ -189,9 +189,18 @@ void processKey(char key) {
 void checkPIR(int currentHour) {
   unsigned long now = millis();
 
+  static unsigned long lastPIRPrint = 0;
+  if (now - lastPIRPrint >= 1000) {
+    Serial.printf("[PIR Monitor] State: %d, Mode: %s\n", currentPIRState, securityMode);
+    lastPIRPrint = now;
+  }
+
   if (motionDetected && now >= motionDetectedUntil) {
     motionDetected = false;
+    stopBuzzer(); // Tắt còi ngay lập tức để không bị delay do mạng
     pushSecurityMotion(false);
+    extern void pushSecurityAlarm(bool active);
+    pushSecurityAlarm(false);
   }
 
   if (strcmp(securityMode, "disabled") == 0) {
@@ -211,17 +220,21 @@ void checkPIR(int currentHour) {
     return;
   }
 
-  if (now - lastPIRAlert < cooldown) {
+  if (lastPIRAlert != 0 && now - lastPIRAlert < cooldown) {
     return;
   }
 
   lastPIRAlert = now;
   motionDetected = true;
   motionDetectedUntil = now + PIR_ACTIVE_MS;
+  
+  alertBuzzer(9999); // Bật còi ngay lập tức để không bị trễ do kết nối Firebase
+
   pushSecurityMotion(true);
+  extern void pushSecurityAlarm(bool active);
+  pushSecurityAlarm(true);
 
   Serial.println(isNight ? "PIR: Intruder detected!" : "PIR: Motion detected (daytime)");
-  alertBuzzer();
 }
 
 void handleUnoCommunication() {
@@ -250,6 +263,11 @@ void handleUnoCommunication() {
             extern int currentLightLevel;
             currentLightLevel = inputBuffer.substring(4).toInt();
           }
+        } else if (inputBuffer.startsWith("TEMP:")) {
+          if (inputBuffer.length() > 5) {
+            extern float cachedTemperature;
+            cachedTemperature = inputBuffer.substring(5).toFloat();
+          }
         }
       }
       inputBuffer = "";
@@ -267,6 +285,8 @@ void handleUnoCommunication() {
     currentPIRState = false;
     extern int currentLightLevel;
     currentLightLevel = 500;
+    extern float cachedTemperature;
+    cachedTemperature = 25.0f;
     pushUnoOnlineStatus(false);
   }
 }

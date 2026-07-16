@@ -28,4 +28,17 @@ struct RelayScheduleConfig {
   bool valid;
 };
 
+// Shared function prototypes
+void openDoor();
+void closeDoor();
+void alertBuzzer(int beeps = 3);
+void stopBuzzer();
+void setRelay(int ch, bool on);
+float readTemperature();
+int readLightLevel();
+bool readHumidity(float &humidity);
+void getTimeString(char *buffer);
+void pushSecurityMotion(bool detected);
+void pushSecurityAlarm(bool active);
+
 #endif // TYPES_H

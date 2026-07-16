@@ -7,7 +7,6 @@
 // Pin Definitions
 // =====================================================
 
-#define LM35_PIN 34
 #define DHT_PIN  27
 #define DHT_TYPE  DHT11
 
@@ -16,21 +15,11 @@ DHT dht(DHT_PIN, DHT_TYPE);
 
 int currentHour = 0;
 int currentLightLevel = 500;
-float cachedTemperature = 0.0f;
+float cachedTemperature = 25.0f; // Default starting temp
 
 void setupSensors() {
   analogReadResolution(12);
   dht.begin();
-
-  long sum = 0;
-  for (int i = 0; i < 50; i++) {
-    sum += analogRead(LM35_PIN);
-    delay(1);
-  }
-  int adcValue = sum / 50;
-  float milliVolt = adcValue * (3300.0 / 4095.0);
-  cachedTemperature = milliVolt / 10.0;
-
   Serial.println("Sensor module ready.");
 }
 
@@ -50,27 +39,6 @@ void setupRTC() {
 #else
   Serial.println("RTC: TEST MODE (define RTC_ENABLED to activate)");
 #endif
-}
-
-void updateTemperatureSensor() {
-  static unsigned long lastSampleTime = 0;
-  static long sum = 0;
-  static int sampleCount = 0;
-
-  unsigned long now = millis();
-  if (now - lastSampleTime >= 2) {
-    sum += analogRead(LM35_PIN);
-    sampleCount++;
-    lastSampleTime = now;
-
-    if (sampleCount >= 50) {
-      int adcValue = sum / 50;
-      float milliVolt = adcValue * (3300.0 / 4095.0);
-      cachedTemperature = milliVolt / 10.0;
-      sum = 0;
-      sampleCount = 0;
-    }
-  }
 }
 
 float readTemperature() {
@@ -130,14 +98,8 @@ void getTimeString(char *buffer) {
 }
 
 int readAirQualityPPM() {
-  long sum = 0;
-  for (int i = 0; i < 50; i++) {
-    sum += analogRead(35);
-    delay(1);
-  }
-  int raw = sum / 50;
+  int raw = analogRead(35);
   float voltage = raw * (3.3f / 4095.0f);
-  Serial.printf("[MQ-2 Debug] Raw ADC: %d, Voltage: %.2fV\n", raw, voltage);
   float ppm = 400.0f + (voltage / 3.3f) * 1600.0f;
   if (ppm < 350.0f) ppm = 350.0f;
   if (ppm > 2000.0f) ppm = 2000.0f;

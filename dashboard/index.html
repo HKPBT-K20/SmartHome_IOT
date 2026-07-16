@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -100,7 +101,7 @@
             box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
         }
 
-        body.light-theme .divide-slate-700 > :not([hidden]) ~ :not([hidden]) {
+        body.light-theme .divide-slate-700> :not([hidden])~ :not([hidden]) {
             border-color: rgba(203, 213, 225, 0.7) !important;
         }
 
@@ -227,8 +228,15 @@
         }
 
         @keyframes security-alert-float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-4px); }
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-4px);
+            }
         }
 
         body.light-theme .security-alert-active {
@@ -263,35 +271,91 @@
             border-color: rgba(148, 163, 184, 0.25);
         }
 
-        body.light-theme .text-white { color: #0f172a !important; }
-        body.light-theme .text-slate-100 { color: #0f172a !important; }
-        body.light-theme .text-slate-200 { color: #334155 !important; }
-        body.light-theme .text-slate-300 { color: #475569 !important; }
-        body.light-theme .text-slate-400 { color: #64748b !important; }
-        body.light-theme .text-slate-500 { color: #64748b !important; }
-        body.light-theme .bg-slate-950 { background-color: #e2e8f0 !important; }
-        body.light-theme .bg-slate-950\/95 { background-color: rgba(255, 255, 255, 0.95) !important; }
-        body.light-theme .bg-slate-950\/90 { background-color: rgba(255, 255, 255, 0.92) !important; }
-        body.light-theme .bg-slate-900\/80 { background-color: rgba(241, 245, 249, 0.9) !important; }
-        body.light-theme .bg-slate-900 { background-color: #f8fafc !important; }
-        body.light-theme .bg-slate-800 { background-color: #cbd5e1 !important; }
-        body.light-theme .bg-slate-800\/80 { background-color: rgba(203, 213, 225, 0.8) !important; }
-        body.light-theme .bg-slate-700\/50 { background-color: rgba(226, 232, 240, 0.5) !important; }
-        body.light-theme .border-slate-800 { border-color: rgba(148, 163, 184, 0.55) !important; }
-        body.light-theme .border-slate-700\/50 { border-color: rgba(148, 163, 184, 0.45) !important; }
-        body.light-theme .border-slate-700 { border-color: rgba(148, 163, 184, 0.5) !important; }
-        body.light-theme .border-slate-700\/70 { border-color: rgba(148, 163, 184, 0.45) !important; }
+        body.light-theme .text-white {
+            color: #0f172a !important;
+        }
+
+        body.light-theme .text-slate-100 {
+            color: #0f172a !important;
+        }
+
+        body.light-theme .text-slate-200 {
+            color: #334155 !important;
+        }
+
+        body.light-theme .text-slate-300 {
+            color: #475569 !important;
+        }
+
+        body.light-theme .text-slate-400 {
+            color: #64748b !important;
+        }
+
+        body.light-theme .text-slate-500 {
+            color: #64748b !important;
+        }
+
+        body.light-theme .bg-slate-950 {
+            background-color: #e2e8f0 !important;
+        }
+
+        body.light-theme .bg-slate-950\/95 {
+            background-color: rgba(255, 255, 255, 0.95) !important;
+        }
+
+        body.light-theme .bg-slate-950\/90 {
+            background-color: rgba(255, 255, 255, 0.92) !important;
+        }
+
+        body.light-theme .bg-slate-900\/80 {
+            background-color: rgba(241, 245, 249, 0.9) !important;
+        }
+
+        body.light-theme .bg-slate-900 {
+            background-color: #f8fafc !important;
+        }
+
+        body.light-theme .bg-slate-800 {
+            background-color: #cbd5e1 !important;
+        }
+
+        body.light-theme .bg-slate-800\/80 {
+            background-color: rgba(203, 213, 225, 0.8) !important;
+        }
+
+        body.light-theme .bg-slate-700\/50 {
+            background-color: rgba(226, 232, 240, 0.5) !important;
+        }
+
+        body.light-theme .border-slate-800 {
+            border-color: rgba(148, 163, 184, 0.55) !important;
+        }
+
+        body.light-theme .border-slate-700\/50 {
+            border-color: rgba(148, 163, 184, 0.45) !important;
+        }
+
+        body.light-theme .border-slate-700 {
+            border-color: rgba(148, 163, 184, 0.5) !important;
+        }
+
+        body.light-theme .border-slate-700\/70 {
+            border-color: rgba(148, 163, 184, 0.45) !important;
+        }
     </style>
 </head>
+
 <body class="bg-[#020617] text-slate-100 font-sans min-h-[100svh] flex overflow-x-hidden">
-    <div id="auth-screen" class="fixed inset-0 z-[60] flex items-center justify-center px-4 bg-slate-950/95 backdrop-blur-xl">
-        <div class="absolute inset-0 pointer-events-none opacity-70"
-             style="background:
+    <div id="auth-screen"
+        class="fixed inset-0 z-[60] flex items-center justify-center px-4 bg-slate-950/95 backdrop-blur-xl">
+        <div class="absolute inset-0 pointer-events-none opacity-70" style="background:
                 radial-gradient(circle at top left, rgba(59, 130, 246, 0.24), transparent 28%),
                 radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.16), transparent 24%);"></div>
-        <div class="relative w-full max-w-md rounded-[32px] border border-slate-700/70 bg-slate-950/90 p-8 shadow-2xl shadow-black/40">
+        <div
+            class="relative w-full max-w-md rounded-[32px] border border-slate-700/70 bg-slate-950/90 p-8 shadow-2xl shadow-black/40">
             <div class="text-center mb-8">
-                <div class="mx-auto mb-4 w-16 h-16 rounded-[22px] bg-sky-500/15 border border-sky-400/20 flex items-center justify-center text-sky-300 text-2xl">
+                <div
+                    class="mx-auto mb-4 w-16 h-16 rounded-[22px] bg-sky-500/15 border border-sky-400/20 flex items-center justify-center text-sky-300 text-2xl">
                     <i class="fa-solid fa-house-laptop"></i>
                 </div>
                 <h1 class="text-3xl font-bold text-white">SmartHome</h1>
@@ -302,15 +366,15 @@
                 <div>
                     <label for="login-email" class="block text-sm font-medium text-slate-300 mb-2">Email</label>
                     <input id="login-email" type="email" autocomplete="email" placeholder="you@example.com"
-                           class="w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400">
+                        class="w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400">
                 </div>
                 <div>
                     <label for="login-password" class="block text-sm font-medium text-slate-300 mb-2">Mật khẩu</label>
                     <input id="login-password" type="password" autocomplete="current-password" placeholder="••••••••"
-                           class="w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400">
+                        class="w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-sky-400">
                 </div>
                 <button id="login-button" type="submit"
-                        class="w-full rounded-2xl bg-sky-600 hover:bg-sky-500 py-3 font-semibold text-white transition shadow-lg shadow-sky-600/20">
+                    class="w-full rounded-2xl bg-sky-600 hover:bg-sky-500 py-3 font-semibold text-white transition shadow-lg shadow-sky-600/20">
                     Đăng nhập
                 </button>
                 <p id="login-status" class="text-sm text-slate-400 text-center">Đăng nhập bằng tài khoản cục bộ.</p>
@@ -319,23 +383,30 @@
     </div>
 
     <div id="app-shell" class="w-full min-h-[100svh] flex flex-row overflow-hidden hidden">
-        <div id="sidebar-backdrop" class="fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity md:hidden"></div>
-        <aside id="sidebar" class="w-64 bg-slate-950/95 border-r border-slate-800 flex flex-col justify-between shadow-[0_0_60px_rgba(15,23,42,0.25)]">
+        <div id="sidebar-backdrop"
+            class="fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity md:hidden">
+        </div>
+        <aside id="sidebar"
+            class="w-64 bg-slate-950/95 border-r border-slate-800 flex flex-col justify-between shadow-[0_0_60px_rgba(15,23,42,0.25)]">
             <div class="p-5">
                 <h1 class="text-2xl font-bold text-sky-400 flex items-center gap-3">
                     <i class="fa-solid fa-house-laptop"></i> SmartHome
                 </h1>
                 <nav class="mt-8 space-y-2" id="sidebar-nav">
-                    <button data-target="page-dashboard" class="nav-btn w-full flex items-center gap-3 px-4 py-3 bg-sky-600 text-white rounded-2xl transition shadow-sm shadow-sky-500/20">
+                    <button data-target="page-dashboard"
+                        class="nav-btn w-full flex items-center gap-3 px-4 py-3 bg-sky-600 text-white rounded-2xl transition shadow-sm shadow-sky-500/20">
                         <i class="fa-solid fa-chart-pie"></i> Dashboard
                     </button>
-                    <button data-target="page-schedule" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-2xl transition">
+                    <button data-target="page-schedule"
+                        class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-2xl transition">
                         <i class="fa-solid fa-clock"></i> Cấu hình hẹn giờ
                     </button>
-                    <button data-target="page-security" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-2xl transition">
+                    <button data-target="page-security"
+                        class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-2xl transition">
                         <i class="fa-solid fa-shield-halved"></i> Quản lý an ninh
                     </button>
-                    <button data-target="page-logs" class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-2xl transition">
+                    <button data-target="page-logs"
+                        class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-2xl transition">
                         <i class="fa-solid fa-key"></i> Nhật ký ra vào
                     </button>
                 </nav>
@@ -346,28 +417,38 @@
         </aside>
 
         <div class="flex-1 min-w-0 flex flex-col overflow-hidden">
-            <header class="bg-slate-950/90 border-b border-slate-800 px-4 md:px-6 py-4 flex flex-col gap-3 md:flex-row md:justify-between md:items-center sticky top-0 z-10 backdrop-blur-xl">
+            <header
+                class="bg-slate-950/90 border-b border-slate-800 px-4 md:px-6 py-4 flex flex-col gap-3 md:flex-row md:justify-between md:items-center sticky top-0 z-10 backdrop-blur-xl">
                 <div class="flex items-center gap-2 sm:gap-3 min-w-0 w-full md:w-auto">
-                    <button id="mobile-sidebar-toggle" class="text-slate-200 bg-slate-800/80 hover:bg-slate-700 px-2.5 py-2 rounded-full transition flex md:hidden items-center gap-2 shrink-0" aria-label="Mở menu">
+                    <button id="mobile-sidebar-toggle"
+                        class="text-slate-200 bg-slate-800/80 hover:bg-slate-700 px-2.5 py-2 rounded-full transition flex md:hidden items-center gap-2 shrink-0"
+                        aria-label="Mở menu">
                         <i class="fa-solid fa-bars text-lg"></i>
                     </button>
-                    <button id="sidebar-toggle" class="text-slate-200 bg-slate-800/80 hover:bg-slate-700 px-3 py-2 rounded-full transition hidden md:flex items-center justify-center shrink-0">
+                    <button id="sidebar-toggle"
+                        class="text-slate-200 bg-slate-800/80 hover:bg-slate-700 px-3 py-2 rounded-full transition hidden md:flex items-center justify-center shrink-0">
                         <i class="fa-solid fa-bars text-lg"></i>
                     </button>
-                    <h2 id="current-page-title" class="text-sm sm:text-base md:text-xl font-semibold text-white min-w-0 flex-1 md:flex-none leading-tight truncate">Tổng quan hệ thống</h2>
+                    <h2 id="current-page-title"
+                        class="text-sm sm:text-base md:text-xl font-semibold text-white min-w-0 flex-1 md:flex-none leading-tight truncate">
+                        Tổng quan hệ thống</h2>
                 </div>
                 <div class="flex items-center gap-2 md:gap-3 flex-wrap justify-start md:justify-end w-full md:w-auto">
-                    <button id="mode-toggle" class="flex items-center justify-center px-3 py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 rounded-full transition shrink-0">
+                    <button id="mode-toggle"
+                        class="flex items-center justify-center px-3 py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-200 rounded-full transition shrink-0">
                         <i class="fa-solid fa-sun" id="mode-toggle-icon"></i>
                     </button>
-                    <div class="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/80 border border-slate-700 text-sm text-slate-300">
+                    <div
+                        class="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/80 border border-slate-700 text-sm text-slate-300">
                         <i class="fa-solid fa-user text-sky-300"></i>
                         <span id="auth-user-label">Chưa đăng nhập</span>
                     </div>
-                    <button id="logout-button" class="px-3 md:px-4 py-2 rounded-full bg-rose-600/15 hover:bg-rose-600 text-rose-200 hover:text-white border border-rose-500/30 text-sm font-medium transition shrink-0">
+                    <button id="logout-button"
+                        class="px-3 md:px-4 py-2 rounded-full bg-rose-600/15 hover:bg-rose-600 text-rose-200 hover:text-white border border-rose-500/30 text-sm font-medium transition shrink-0">
                         Đăng xuất
                     </button>
-                    <div id="weather-widget" class="flex items-center gap-2 bg-slate-900/80 px-3 md:px-4 py-2 rounded-full text-xs md:text-sm border border-slate-700 w-full md:w-auto min-w-0">
+                    <div id="weather-widget"
+                        class="flex items-center gap-2 bg-slate-900/80 px-3 md:px-4 py-2 rounded-full text-xs md:text-sm border border-slate-700 w-full md:w-auto min-w-0">
                         <i class="fa-solid fa-cloud-sun text-sky-300"></i>
                         <span id="weather-info" class="leading-tight min-w-0">Đang tải dữ liệu thời tiết...</span>
                     </div>
@@ -377,69 +458,87 @@
             <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6 scrollbar-thin">
                 <div id="page-dashboard" class="page-content space-y-6">
                     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
-                        <div class="panel-card p-5 rounded-[28px] border border-slate-700/70 flex items-center justify-between shadow-[0_20px_45px_rgba(15,23,42,0.18)]">
+                        <div
+                            class="panel-card p-5 rounded-[28px] border border-slate-700/70 flex items-center justify-between shadow-[0_20px_45px_rgba(15,23,42,0.18)]">
                             <div>
                                 <p class="text-sm text-slate-400 font-semibold uppercase tracking-[0.12em]">Nhiệt độ</p>
                                 <h3 id="txt-temp" class="text-3xl font-bold mt-2 text-white">-- °C</h3>
                             </div>
-                            <div class="w-12 h-12 bg-red-500/10 rounded-2xl flex items-center justify-center text-red-400 text-xl">
+                            <div
+                                class="w-12 h-12 bg-red-500/10 rounded-2xl flex items-center justify-center text-red-400 text-xl">
                                 <i class="fa-solid fa-temperature-high"></i>
                             </div>
                         </div>
-                        <div class="panel-card p-5 rounded-[28px] border border-slate-700/70 flex items-center justify-between shadow-[0_20px_45px_rgba(15,23,42,0.18)]">
+                        <div
+                            class="panel-card p-5 rounded-[28px] border border-slate-700/70 flex items-center justify-between shadow-[0_20px_45px_rgba(15,23,42,0.18)]">
                             <div>
                                 <p class="text-sm text-slate-400 font-semibold uppercase tracking-[0.12em]">Độ sáng</p>
                                 <h3 id="txt-light" class="text-3xl font-bold mt-2 text-white">-- Lux</h3>
                             </div>
-                            <div class="w-12 h-12 bg-sky-400/10 rounded-2xl flex items-center justify-center text-sky-300 text-xl">
+                            <div
+                                class="w-12 h-12 bg-sky-400/10 rounded-2xl flex items-center justify-center text-sky-300 text-xl">
                                 <i class="fa-solid fa-lightbulb"></i>
                             </div>
                         </div>
-                        <div class="panel-card p-5 rounded-[28px] border border-slate-700/70 flex items-center justify-between shadow-[0_20px_45px_rgba(15,23,42,0.18)]">
+                        <div
+                            class="panel-card p-5 rounded-[28px] border border-slate-700/70 flex items-center justify-between shadow-[0_20px_45px_rgba(15,23,42,0.18)]">
                             <div>
                                 <p class="text-sm text-slate-400 font-semibold uppercase tracking-[0.12em]">Độ ẩm</p>
                                 <h3 id="txt-humidity" class="text-3xl font-bold mt-2 text-white">-- %</h3>
                             </div>
-                            <div class="w-12 h-12 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-300 text-xl">
+                            <div
+                                class="w-12 h-12 bg-sky-500/10 rounded-2xl flex items-center justify-center text-sky-300 text-xl">
                                 <i class="fa-solid fa-droplet"></i>
                             </div>
                         </div>
-                        <div class="panel-card p-5 rounded-[28px] border border-slate-700/70 flex items-center justify-between shadow-[0_20px_45px_rgba(15,23,42,0.18)]">
+                        <div
+                            class="panel-card p-5 rounded-[28px] border border-slate-700/70 flex items-center justify-between shadow-[0_20px_45px_rgba(15,23,42,0.18)]">
                             <div>
-                                <p class="text-sm text-slate-400 font-semibold uppercase tracking-[0.12em]">Chất lượng không khí</p>
+                                <p class="text-sm text-slate-400 font-semibold uppercase tracking-[0.12em]">Chất lượng
+                                    không khí</p>
                                 <h3 id="txt-air" class="text-3xl font-bold mt-2 text-white">-- PPM</h3>
                             </div>
-                            <div class="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-300 text-xl">
+                            <div
+                                class="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-300 text-xl">
                                 <i class="fa-solid fa-wind"></i>
                             </div>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-                        <div class="panel-card p-6 rounded-[28px] border border-slate-700/60 lg:col-span-2 shadow-[0_25px_60px_rgba(15,23,42,0.2)]">
-                            <h3 class="text-lg font-semibold text-white mb-4"><i class="fa-solid fa-toggle-on text-sky-400 mr-2"></i>Điều khiển nhanh đèn</h3>
+                        <div
+                            class="panel-card p-6 rounded-[28px] border border-slate-700/60 lg:col-span-2 shadow-[0_25px_60px_rgba(15,23,42,0.2)]">
+                            <h3 class="text-lg font-semibold text-white mb-4"><i
+                                    class="fa-solid fa-toggle-on text-sky-400 mr-2"></i>Điều khiển nhanh đèn</h3>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                                <div class="p-4 glass-panel rounded-3xl flex justify-between items-center border border-slate-700/50">
+                                <div
+                                    class="p-4 glass-panel rounded-3xl flex justify-between items-center border border-slate-700/50">
                                     <div>
                                         <p class="font-medium text-white">Đèn phòng làm việc</p>
                                         <span id="status-ch1" class="text-xs text-slate-400">--</span>
                                     </div>
-                                    <button id="btn-ch1" class="px-4 py-2 bg-slate-800 text-white rounded-2xl font-semibold transition shadow-sm shadow-slate-900/40">OFF</button>
+                                    <button id="btn-ch1"
+                                        class="px-4 py-2 bg-slate-800 text-white rounded-2xl font-semibold transition shadow-sm shadow-slate-900/40">OFF</button>
                                 </div>
-                                <div class="p-4 glass-panel rounded-3xl flex justify-between items-center border border-slate-700/50">
+                                <div
+                                    class="p-4 glass-panel rounded-3xl flex justify-between items-center border border-slate-700/50">
                                     <div>
                                         <p class="font-medium text-white">Đèn phòng khách</p>
                                         <span id="status-ch3" class="text-xs text-slate-400">--</span>
                                     </div>
-                                    <button id="btn-ch3" class="px-4 py-2 bg-slate-800 text-white rounded-2xl font-semibold transition shadow-sm shadow-slate-900/40">OFF</button>
+                                    <button id="btn-ch3"
+                                        class="px-4 py-2 bg-slate-800 text-white rounded-2xl font-semibold transition shadow-sm shadow-slate-900/40">OFF</button>
                                 </div>
                             </div>
                         </div>
 
-                        <div id="box-motion-widget" class="panel-card p-6 rounded-[28px] border border-slate-700/60 flex flex-col justify-between shadow-[0_25px_60px_rgba(15,23,42,0.2)]">
+                        <div id="box-motion-widget"
+                            class="panel-card p-6 rounded-[28px] border border-slate-700/60 flex flex-col justify-between shadow-[0_25px_60px_rgba(15,23,42,0.2)]">
                             <div>
-                                <h3 class="text-lg font-semibold text-white mb-4"><i class="fa-solid fa-shield-virus text-rose-400 mr-2"></i>Trạng thái an ninh</h3>
-                                <div id="div-motion-bg" class="p-4 rounded-3xl glass-panel flex items-center gap-4 border border-slate-700/50">
+                                <h3 class="text-lg font-semibold text-white mb-4"><i
+                                        class="fa-solid fa-shield-virus text-rose-400 mr-2"></i>Trạng thái an ninh</h3>
+                                <div id="div-motion-bg"
+                                    class="p-4 rounded-3xl glass-panel flex items-center gap-4 border border-slate-700/50">
                                     <div id="icon-motion" class="text-2xl text-slate-400">
                                         <i class="fa-solid fa-person-walking"></i>
                                     </div>
@@ -450,13 +549,15 @@
                                     </div>
                                 </div>
                             </div>
-                            <button id="btn-clear-alarm" class="w-full mt-4 py-2 bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/30 rounded-2xl font-medium text-sm transition hidden">
+                            <button id="btn-clear-alarm"
+                                class="w-full mt-4 py-2 bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/30 rounded-2xl font-medium text-sm transition hidden">
                                 <i class="fa-solid fa-bell-slash mr-2"></i>Tắt còi báo động khẩn cấp
                             </button>
                         </div>
                     </div>
 
-                    <div class="panel-card p-4 md:p-6 rounded-[28px] border border-slate-700/60 shadow-[0_25px_60px_rgba(15,23,42,0.2)]">
+                    <div
+                        class="panel-card p-4 md:p-6 rounded-[28px] border border-slate-700/60 shadow-[0_25px_60px_rgba(15,23,42,0.2)]">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-semibold text-white">
                                 <i class="fa-solid fa-clock-rotate-left text-sky-400 mr-2"></i>Nhật ký truy cập gần nhất
@@ -475,7 +576,8 @@
                                 </thead>
                                 <tbody id="table-access-log" class="divide-y divide-slate-700">
                                     <tr>
-                                        <td colspan="4" class="px-6 py-4 text-center text-slate-500">Đang đồng bộ dữ liệu nhật ký...</td>
+                                        <td colspan="4" class="px-6 py-4 text-center text-slate-500">Đang đồng bộ dữ
+                                            liệu nhật ký...</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -484,50 +586,65 @@
                 </div>
 
                 <div id="page-schedule" class="page-content space-y-6 hidden">
-                    <div class="panel-card p-4 md:p-6 rounded-[28px] border border-slate-700/60 shadow-[0_25px_60px_rgba(15,23,42,0.2)]">
+                    <div
+                        class="panel-card p-4 md:p-6 rounded-[28px] border border-slate-700/60 shadow-[0_25px_60px_rgba(15,23,42,0.2)]">
                         <h3 class="text-lg font-semibold text-white mb-2">
                             <i class="fa-solid fa-clock text-sky-400 mr-2"></i>Cài đặt lịch hẹn giờ tự động
                         </h3>
-                        <p class="text-sm text-slate-400 mb-6">Nhập giờ bật và giờ tắt cho 2 đèn, hệ thống sẽ tự hiểu lịch trong ngày hoặc lịch qua đêm.</p>
+                        <p class="text-sm text-slate-400 mb-6">Nhập giờ bật và giờ tắt cho 2 đèn, hệ thống sẽ tự hiểu
+                            lịch trong ngày hoặc lịch qua đêm.</p>
 
                         <div class="space-y-4 md:space-y-6">
-                            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 items-end p-4 glass-panel rounded-3xl border border-slate-700/50">
+                            <div
+                                class="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 items-end p-4 glass-panel rounded-3xl border border-slate-700/50">
                                 <div class="md:col-span-1">
-                                    <label class="block text-sm font-medium text-slate-200 mb-1">Đèn phòng làm việc</label>
-                                    <span class="text-xs text-slate-400 block" id="lbl-schedule-status-ch1">Đang tải...</span>
+                                    <label class="block text-sm font-medium text-slate-200 mb-1">Đèn phòng làm
+                                        việc</label>
+                                    <span class="text-xs text-slate-400 block" id="lbl-schedule-status-ch1">Đang
+                                        tải...</span>
                                     <p id="schedule-summary-ch1" class="text-xs text-slate-500 mt-2">...</p>
                                 </div>
                                 <div>
                                     <label class="block text-xs text-slate-400 mb-1">Giờ bật (ON)</label>
-                                    <input type="time" id="time-on-ch1" class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-3 py-1.5 text-white focus:outline-none focus:border-sky-400">
+                                    <input type="time" id="time-on-ch1"
+                                        class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-3 py-1.5 text-white focus:outline-none focus:border-sky-400">
                                 </div>
                                 <div>
                                     <label class="block text-xs text-slate-400 mb-1">Giờ tắt (OFF)</label>
-                                    <input type="time" id="time-off-ch1" class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-3 py-1.5 text-white focus:outline-none focus:border-sky-400">
+                                    <input type="time" id="time-off-ch1"
+                                        class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-3 py-1.5 text-white focus:outline-none focus:border-sky-400">
                                 </div>
                                 <div class="flex gap-2">
-                                    <button id="btn-save-sch-ch1" class="flex-1 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-2xl transition text-sm">Lưu</button>
-                                    <button id="btn-toggle-sch-ch1" class="px-3 py-1.5 bg-slate-800 text-white rounded-2xl transition text-sm">Bật</button>
+                                    <button id="btn-save-sch-ch1"
+                                        class="flex-1 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-2xl transition text-sm">Lưu</button>
+                                    <button id="btn-toggle-sch-ch1"
+                                        class="px-3 py-1.5 bg-slate-800 text-white rounded-2xl transition text-sm">Bật</button>
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 items-end p-4 glass-panel rounded-3xl border border-slate-700/50">
+                            <div
+                                class="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 items-end p-4 glass-panel rounded-3xl border border-slate-700/50">
                                 <div class="md:col-span-1">
                                     <label class="block text-sm font-medium text-slate-200 mb-1">Đèn phòng khách</label>
-                                    <span class="text-xs text-slate-400 block" id="lbl-schedule-status-ch3">Đang tải...</span>
+                                    <span class="text-xs text-slate-400 block" id="lbl-schedule-status-ch3">Đang
+                                        tải...</span>
                                     <p id="schedule-summary-ch3" class="text-xs text-slate-500 mt-2">...</p>
                                 </div>
                                 <div>
                                     <label class="block text-xs text-slate-400 mb-1">Giờ bật (ON)</label>
-                                    <input type="time" id="time-on-ch3" class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-3 py-1.5 text-white focus:outline-none focus:border-sky-400">
+                                    <input type="time" id="time-on-ch3"
+                                        class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-3 py-1.5 text-white focus:outline-none focus:border-sky-400">
                                 </div>
                                 <div>
                                     <label class="block text-xs text-slate-400 mb-1">Giờ tắt (OFF)</label>
-                                    <input type="time" id="time-off-ch3" class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-3 py-1.5 text-white focus:outline-none focus:border-sky-400">
+                                    <input type="time" id="time-off-ch3"
+                                        class="w-full bg-slate-950 border border-slate-700 rounded-2xl px-3 py-1.5 text-white focus:outline-none focus:border-sky-400">
                                 </div>
                                 <div class="flex gap-2">
-                                    <button id="btn-save-sch-ch3" class="flex-1 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-2xl transition text-sm">Lưu</button>
-                                    <button id="btn-toggle-sch-ch3" class="px-3 py-1.5 bg-slate-800 text-white rounded-2xl transition text-sm">Bật</button>
+                                    <button id="btn-save-sch-ch3"
+                                        class="flex-1 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-2xl transition text-sm">Lưu</button>
+                                    <button id="btn-toggle-sch-ch3"
+                                        class="px-3 py-1.5 bg-slate-800 text-white rounded-2xl transition text-sm">Bật</button>
                                 </div>
                             </div>
 
@@ -536,57 +653,72 @@
                 </div>
 
                 <div id="page-security" class="page-content space-y-6 hidden">
-                    <div class="panel-card p-4 md:p-6 rounded-[28px] border border-slate-700/60 shadow-[0_25px_60px_rgba(15,23,42,0.2)]">
+                    <div
+                        class="panel-card p-4 md:p-6 rounded-[28px] border border-slate-700/60 shadow-[0_25px_60px_rgba(15,23,42,0.2)]">
                         <div class="flex items-center justify-between gap-3 mb-4">
-                            <h3 class="text-lg font-semibold text-white"><i class="fa-solid fa-user-shield text-rose-400 mr-2"></i>Cài đặt chế độ kích hoạt chống trộm</h3>
-                            <span id="security-demo-badge" class="hidden px-3 py-1 rounded-full bg-amber-500/15 border border-amber-400/30 text-amber-300 text-xs font-semibold">LOCAL MODE</span>
+                            <h3 class="text-lg font-semibold text-white"><i
+                                    class="fa-solid fa-user-shield text-rose-400 mr-2"></i>Cài đặt chế độ kích hoạt
+                                chống trộm</h3>
+                            <span id="security-demo-badge"
+                                class="hidden px-3 py-1 rounded-full bg-amber-500/15 border border-amber-400/30 text-amber-300 text-xs font-semibold">LOCAL
+                                MODE</span>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                             <div class="p-4 glass-panel border border-slate-700/50 rounded-3xl space-y-4">
                                 <p class="font-medium text-white">Chế độ hoạt động</p>
                                 <div class="space-y-3">
                                     <label class="flex items-center gap-3 cursor-pointer text-slate-200">
-                                        <input type="radio" name="security-mode" value="always" class="text-sky-400 focus:ring-0">
+                                        <input type="radio" name="security-mode" value="always"
+                                            class="text-sky-400 focus:ring-0">
                                         <span>Luôn bảo vệ (24/7)</span>
                                     </label>
                                     <label class="flex items-center gap-3 cursor-pointer text-slate-200">
-                                        <input type="radio" name="security-mode" value="night_only" class="text-sky-400 focus:ring-0">
+                                        <input type="radio" name="security-mode" value="night_only"
+                                            class="text-sky-400 focus:ring-0">
                                         <span>Chỉ kích hoạt ban đêm</span>
                                     </label>
                                     <label class="flex items-center gap-3 cursor-pointer text-slate-200">
-                                        <input type="radio" name="security-mode" value="disabled" class="text-sky-400 focus:ring-0">
+                                        <input type="radio" name="security-mode" value="disabled"
+                                            class="text-sky-400 focus:ring-0">
                                         <span>Tắt chế độ báo động</span>
                                     </label>
                                 </div>
-                                <button id="btn-save-security-mode" class="w-full mt-2 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-2xl font-medium text-sm transition">Cập nhật chế độ</button>
+                                <button id="btn-save-security-mode"
+                                    class="w-full mt-2 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-2xl font-medium text-sm transition">Cập
+                                    nhật chế độ</button>
                             </div>
 
-                            <div class="p-4 glass-panel border border-slate-700/50 rounded-3xl flex flex-col justify-between">
+                            <div
+                                class="p-4 glass-panel border border-slate-700/50 rounded-3xl flex flex-col justify-between">
                                 <div>
                                     <p class="font-medium text-white mb-1">Còi báo động vật lý</p>
-                                    <p class="text-xs text-slate-400 mb-4">Kiểm tra hoặc điều khiển còi hú đang kết nối với ESP32</p>
+                                    <p class="text-xs text-slate-400 mb-4">Kiểm tra hoặc điều khiển còi hú thủ công</p>
                                 </div>
-                                <button id="btn-toggle-alarm" class="w-full py-3 bg-slate-800 text-white font-bold rounded-2xl transition">ĐANG TẮT</button>
+                                <button id="btn-toggle-alarm"
+                                    class="w-full py-3 bg-slate-800 text-white font-bold rounded-2xl transition">ĐANG
+                                    TẮT</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div id="page-logs" class="page-content space-y-6 hidden">
-                    <div class="panel-card rounded-[28px] border border-slate-700/60 overflow-hidden shadow-[0_25px_60px_rgba(15,23,42,0.2)]">
+                    <div
+                        class="panel-card rounded-[28px] border border-slate-700/60 overflow-hidden shadow-[0_25px_60px_rgba(15,23,42,0.2)]">
                         <div class="px-6 py-4 border-b border-slate-700/60 flex justify-between items-center">
                             <h3 class="text-lg font-semibold text-white">
-                                <i class="fa-solid fa-clock-rotate-left text-sky-400 mr-2"></i>Nhật ký chi tiết ra/vào hệ thống (RFID / Passcode)
+                                <i class="fa-solid fa-clock-rotate-left text-sky-400 mr-2"></i>Nhật ký ra/vào
                             </h3>
-                            <button id="btn-clear-logs" class="px-3 py-1 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white rounded-2xl text-xs font-semibold border border-rose-500/30 transition">
-                                Xóa lịch sử nhật ký
+                            <button id="btn-clear-logs"
+                                class="px-3 py-1 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white rounded-2xl text-xs font-semibold border border-rose-500/30 transition">
+                                Xóa lịch sử
                             </button>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full min-w-[720px] text-left text-sm">
                                 <thead class="bg-slate-900/80 text-slate-400 uppercase text-xs tracking-wider">
                                     <tr>
-                                        <th class="px-6 py-3">Thời gian chính xác</th>
+                                        <th class="px-6 py-3">Thời gian</th>
                                         <th class="px-6 py-3">Xác thực bằng</th>
                                         <th class="px-6 py-3">Người xác thực</th>
                                         <th class="px-6 py-3">Quyền truy cập</th>
@@ -594,7 +726,8 @@
                                 </thead>
                                 <tbody id="table-full-logs" class="divide-y divide-slate-700">
                                     <tr>
-                                        <td colspan="4" class="px-6 py-4 text-center text-slate-500">Đang đồng bộ dữ liệu nhật ký...</td>
+                                        <td colspan="4" class="px-6 py-4 text-center text-slate-500">Đang đồng bộ dữ
+                                            liệu nhật ký...</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -605,10 +738,13 @@
         </div>
     </div>
 
-    <div id="toast-container" class="fixed top-4 right-4 z-50 flex w-[92vw] max-w-sm flex-col gap-3 pointer-events-none"></div>
+    <div id="toast-container"
+        class="fixed top-4 right-4 z-50 flex w-[92vw] max-w-sm flex-col gap-3 pointer-events-none"></div>
 
-    <div id="confirm-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-950/70 backdrop-blur-sm px-4">
-        <div class="w-full max-w-md rounded-[28px] border border-slate-700/70 bg-slate-950/95 p-6 shadow-2xl shadow-black/40">
+    <div id="confirm-modal"
+        class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-950/70 backdrop-blur-sm px-4">
+        <div
+            class="w-full max-w-md rounded-[28px] border border-slate-700/70 bg-slate-950/95 p-6 shadow-2xl shadow-black/40">
             <div class="flex items-start gap-3">
                 <div class="mt-1 text-rose-400 text-xl">
                     <i class="fa-solid fa-triangle-exclamation"></i>
@@ -619,12 +755,16 @@
                 </div>
             </div>
             <div class="mt-6 flex justify-end gap-3">
-                <button id="confirm-modal-cancel" class="px-4 py-2 rounded-2xl bg-slate-800 text-slate-200 hover:bg-slate-700 transition font-semibold">Hủy</button>
-                <button id="confirm-modal-ok" class="px-4 py-2 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-semibold transition">Xác nhận</button>
+                <button id="confirm-modal-cancel"
+                    class="px-4 py-2 rounded-2xl bg-slate-800 text-slate-200 hover:bg-slate-700 transition font-semibold">Hủy</button>
+                <button id="confirm-modal-ok"
+                    class="px-4 py-2 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-semibold transition">Xác
+                    nhận</button>
             </div>
         </div>
     </div>
 
     <script type="module" src="js/app.js"></script>
 </body>
+
 </html>
