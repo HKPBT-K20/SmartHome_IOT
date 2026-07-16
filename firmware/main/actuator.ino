@@ -114,3 +114,58 @@ void updateBuzzer() {
     }
   }
 }
+
+// ── SMART LIGHTING AUTOMATION ────────────────────────────────────
+extern bool currentPIRState;
+extern int  currentHour;
+extern int  currentLightLevel;
+
+#define LDR_DARK_THRESHOLD 2000
+
+void updateSmartLighting() {
+  static unsigned long lastMotionTime = 0;
+  static bool autoLightOn = false;
+  unsigned long now = millis();
+
+  if (currentPIRState) {
+    lastMotionTime = now;
+  }
+
+  // Nếu chưa từng có chuyển động từ lúc bật máy, bỏ qua
+  if (lastMotionTime == 0 && !currentPIRState) {
+    return;
+  }
+
+  unsigned long timeSinceLastMotion = now - lastMotionTime;
+  bool shouldBeOn = false;
+  unsigned long timeoutMs = 0;
+
+  bool isEvening = (currentHour >= 18 && currentHour < 22);
+  bool isSleep   = (currentHour >= 22 || currentHour < 6);
+  bool isDay     = (currentHour >= 6  && currentHour < 18);
+
+  if (isEvening) {
+    timeoutMs = 15UL * 60UL * 1000UL; // 15 phút
+    if (timeSinceLastMotion < timeoutMs) shouldBeOn = true;
+  } 
+  else if (isSleep) {
+    timeoutMs = 3UL * 60UL * 1000UL; // 3 phút
+    if (timeSinceLastMotion < timeoutMs) shouldBeOn = true;
+  } 
+  else if (isDay) {
+    timeoutMs = 15UL * 60UL * 1000UL; // Dùng 15 phút cho ban ngày để tránh chớp nháy
+    bool isDark = (currentLightLevel > LDR_DARK_THRESHOLD);
+    if (isDark && (timeSinceLastMotion < timeoutMs)) shouldBeOn = true;
+  }
+
+  // Điều khiển Relay 1 (Kênh đèn chính)
+  if (shouldBeOn && !autoLightOn) {
+    setRelay(1, true);
+    autoLightOn = true;
+    Serial.println("SmartLighting: Auto Turn ON CH1");
+  } else if (!shouldBeOn && autoLightOn) {
+    setRelay(1, false);
+    autoLightOn = false;
+    Serial.println("SmartLighting: Auto Turn OFF CH1");
+  }
+}

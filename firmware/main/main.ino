@@ -41,6 +41,9 @@ void loop() {
   updateDoor();
   updateBuzzer();
   updateDisplay();
+  
+  extern void updateSmartLighting();
+  updateSmartLighting();
 
   if (now - lastAirPush >= 5000) {
     extern void pushAirQuality();
