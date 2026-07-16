@@ -142,6 +142,7 @@ WiFi SSID: [MASKED_WIFI]
 | Chế độ an ninh | `network.ino` | Đọc `/security/mode` → always / night_only / disabled |
 | Push motion detected | `network.ino` | Push `/security/motion_detected` khi PIR kích hoạt |
 | Push relay state | `network.ino` | Sync `/relay/ch1,ch3` về Firebase sau khi thay đổi |
+| Đèn thông minh tự động | `actuator.ino` | Tự bật/tắt đèn CH1 dựa theo giờ (Tối/Ngủ/Ngày), PIR và ánh sáng LDR |
 
 ### Dashboard (Web)
 
