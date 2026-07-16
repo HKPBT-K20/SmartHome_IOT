@@ -17,10 +17,12 @@ void pushUnoOnlineStatus(bool online);
 #define RST_PIN -1
 MFRC522 rfid(SS_PIN, RST_PIN);
 
-String validUIDs[] = {"4362F506"};
+#include "config.h"
+
+String validUIDs[] = {RFID_UID};
 int    uidCount    = sizeof(validUIDs) / sizeof(validUIDs[0]);
 
-String        correctPIN    = "123456";
+String        correctPIN    = SECURITY_PIN;
 String        inputPIN      = "";
 int           wrongAttempts = 0;
 bool          isLocked      = false;

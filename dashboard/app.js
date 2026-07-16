@@ -7,27 +7,14 @@ import {
     update,
     remove
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { FIREBASE_CONFIG, MOCK_ACCOUNT, MOCK_PASSWORD_ALIASES } from "./.env";
 
 // 1. Firebase config
-const firebaseConfig = {
-    apiKey: "AIzaSyDo0ncLdnDplJoessMju0EKoGQGsvDealI",
-    authDomain: "smart-home-iot-d1c77.firebaseapp.com",
-    databaseURL: "https://smart-home-iot-d1c77-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "smart-home-iot-d1c77",
-    storageBucket: "smart-home-iot-d1c77.firebasestorage.app",
-    messagingSenderId: "780541959867",
-    appId: "1:780541959867:web:6918bb038c57975b65939e"
-};
+const firebaseConfig = FIREBASE_CONFIG;
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const USE_MOCK_DEMO = Object.values(firebaseConfig).some(value => typeof value === 'string' && value.includes('YOUR_'));
-const MOCK_ACCOUNT = {
-    email: 'quocbao.nguyen16102006@gmail.com',
-    password: 'demo1610',
-    displayName: 'Quoc Bao Demo'
-};
-const MOCK_PASSWORD_ALIASES = ['demo1610', '#barooinnit1610', 'barooinnit1610', '1610'];
 const MOCK_SESSION_KEY = 'smarthomeMockSession';
 const MOCK_SCHEDULES_KEY = 'smarthomeMockSchedules';
 const MOCK_SECURITY_KEY = 'smarthomeMockSecurity';

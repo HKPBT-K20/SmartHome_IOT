@@ -1,4 +1,8 @@
-
 AGENTS.md
 firmware/main/config.h
 /firmware/main/config.h
+
+# Env files
+.env
+env.js
+dashboard/env.js

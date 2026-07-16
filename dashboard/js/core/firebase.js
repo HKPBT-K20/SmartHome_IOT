@@ -8,15 +8,9 @@ import {
     remove
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-export const firebaseConfig = {
-    apiKey: "AIzaSyDo0ncLdnDplJoessMju0EKoGQGsvDealI",
-    authDomain: "smart-home-iot-d1c77.firebaseapp.com",
-    databaseURL: "https://smart-home-iot-d1c77-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "smart-home-iot-d1c77",
-    storageBucket: "smart-home-iot-d1c77.firebasestorage.app",
-    messagingSenderId: "780541959867",
-    appId: "1:780541959867:web:6918bb038c57975b65939e"
-};
+import { FIREBASE_CONFIG } from "../../.env";
+
+export const firebaseConfig = FIREBASE_CONFIG;
 
 export const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);
@@ -24,19 +18,11 @@ export const USE_MOCK_DEMO = Object.values(firebaseConfig).some(value => typeof 
 
 export { ref, onValue, set, update, remove };
 
-export const MOCK_ACCOUNT = {
-    email: "hkpbSmartHome@gmail.com",
-    password: "admin123",
-    displayName: "HKPB Demo"
-};
+import { MOCK_ACCOUNT as ENV_MOCK_ACCOUNT, MOCK_PASSWORD_ALIASES as ENV_MOCK_PASSWORD_ALIASES } from "../../.env";
 
-export const MOCK_PASSWORD_ALIASES = [
-    MOCK_ACCOUNT.password,
-    "demo1610",
-    "#barooinnit1610",
-    "barooinnit1610",
-    "1610"
-];
+export const MOCK_ACCOUNT = ENV_MOCK_ACCOUNT;
+
+export const MOCK_PASSWORD_ALIASES = ENV_MOCK_PASSWORD_ALIASES;
 
 const MOCK_SESSION_KEY = "smarthomeMockSession";
 const MOCK_SCHEDULES_KEY = "smarthomeMockSchedules";
