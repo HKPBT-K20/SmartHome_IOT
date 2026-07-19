@@ -5,7 +5,8 @@ import {
     onValue,
     set,
     update,
-    remove
+    remove,
+    push
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 import { FIREBASE_CONFIG, MOCK_ACCOUNT, MOCK_PASSWORD_ALIASES } from "./.env";
 
@@ -68,6 +69,22 @@ function getMockSecurity() {
 
 function setMockSecurity(security) {
     localStorage.setItem(MOCK_SECURITY_KEY, JSON.stringify(security));
+}
+
+function logWebAction(actionName) {
+    if (USE_MOCK_DEMO) return;
+    try {
+        const session = getMockSession();
+        const userName = session ? session.displayName : 'Khách';
+        const timestamp = new Date().toLocaleString('vi-VN');
+        push(ref(db, 'web_actions_log'), {
+            action: actionName,
+            user: userName,
+            timestamp: timestamp
+        });
+    } catch (error) {
+        console.error('Lỗi khi ghi log web action:', error);
+    }
 }
 
 // ==========================================
@@ -440,6 +457,7 @@ if (loginForm) {
             }
             setLoginStatus('Đăng nhập thành công.', 'success');
             showToast('Đăng nhập thành công', `Xin chào ${MOCK_ACCOUNT.displayName}.`, 'success');
+            logWebAction('Đăng nhập hệ thống');
         } catch (error) {
             console.error('Đăng nhập thất bại:', error);
             const message = 'Sai email hoặc mật khẩu demo.';
@@ -464,6 +482,7 @@ if (logoutButton) {
             authUserLabel.innerText = 'Chưa đăng nhập';
         }
         showToast('Đã đăng xuất', 'Phiên demo đã kết thúc.', 'info');
+        logWebAction('Đăng xuất hệ thống');
     });
 }
 
@@ -552,6 +571,7 @@ relayChannels.forEach(ch => {
         const isCurrentActive = btn.dataset.state === 'true';
         set(ref(db, `relay/${ch}`), !isCurrentActive);
         showToast('Đã gửi lệnh điều khiển', `Thiết bị ${ch.toUpperCase()} đang được cập nhật trạng thái.`, 'info');
+        logWebAction(`Điều khiển thủ công: ${!isCurrentActive ? 'BẬT' : 'TẮT'} thiết bị ${ch.toUpperCase()}`);
     });
 });
 
@@ -619,6 +639,7 @@ relayChannels.forEach(ch => {
                 `${ch.toUpperCase()} chạy ${overnight ? 'qua đêm' : 'mỗi ngày'}: ${onTime} → ${offTime}.`,
                 'success'
             );
+            logWebAction(`Lưu cấu hình hẹn giờ ${ch.toUpperCase()} (${onTime} → ${offTime})`);
         } catch (error) {
             console.error(`Không thể lưu lịch trình cho ${ch}:`, error);
             showToast('Không lưu được lịch trình', 'Kiểm tra Firebase config hoặc quyền ghi.', 'error');
@@ -664,6 +685,7 @@ relayChannels.forEach(ch => {
                 `Thiết bị ${ch.toUpperCase()} đã được ${nextEnabled ? 'kích hoạt' : 'dừng'} chế độ tự động.`,
                 nextEnabled ? 'success' : 'info'
             );
+            logWebAction(`${nextEnabled ? 'Bật' : 'Tắt'} chế độ hẹn giờ tự động cho ${ch.toUpperCase()}`);
         } catch (error) {
             console.error(`Không thể đổi trạng thái hẹn giờ cho ${ch}:`, error);
             showToast('Không đổi được trạng thái hẹn giờ', 'Kiểm tra Firebase config hoặc quyền ghi.', 'error');
@@ -748,6 +770,7 @@ if (btnSaveSecurityMode) {
         try {
             await set(ref(db, 'security/mode'), selectedRadio.value);
             showToast('Đã cập nhật chế độ an ninh', 'Cấu hình bảo vệ đã được lưu thành công.', 'success');
+            logWebAction(`Cập nhật chế độ an ninh: ${selectedRadio.value}`);
         } catch (error) {
             console.error('Không thể lưu chế độ an ninh:', error);
             showToast('Không lưu được chế độ an ninh', 'Kiểm tra Firebase config hoặc quyền ghi.', 'error');
@@ -760,6 +783,7 @@ const deactivateAlarm = async () => {
         await set(ref(db, 'security/alarm_status'), false);
         await set(ref(db, 'security/motion_detected'), false);
         showToast('Đã tắt còi báo động', 'Tín hiệu khẩn cấp đã được reset.', 'success');
+        logWebAction('Reset cảnh báo đột nhập / tắt còi báo động');
     } catch (error) {
         console.error('Không thể tắt còi báo động:', error);
         showToast('Không tắt được còi báo động', 'Kiểm tra lại kết nối Firebase.', 'error');
@@ -780,6 +804,7 @@ if (btnToggleAlarm) {
                 !isAlarmHuming ? 'Dùng để demo âm báo động.' : 'Còi báo động đã trở về trạng thái bình thường.',
                 !isAlarmHuming ? 'warning' : 'info'
             );
+            logWebAction(!isAlarmHuming ? 'Kích hoạt còi thử thủ công' : 'Tắt còi thử thủ công');
         } catch (error) {
             console.error('Không thể đổi trạng thái còi báo động:', error);
             showToast('Không đổi được trạng thái còi', 'Kiểm tra Firebase config hoặc quyền ghi.', 'error');
@@ -1009,6 +1034,7 @@ if (btnClearLogs) {
         try {
             await remove(ref(db, 'access_log'));
             showToast('Đã xóa lịch sử truy cập', 'Toàn bộ log đã được dọn sạch.', 'success');
+            logWebAction('Xóa lịch sử truy cập hệ thống');
         } catch (error) {
             console.error('Không thể xóa nhật ký truy cập:', error);
             showToast('Không xóa được nhật ký', 'Kiểm tra Firebase config hoặc quyền ghi.', 'error');
