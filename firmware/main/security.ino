@@ -265,11 +265,6 @@ void handleUnoCommunication() {
             extern int currentLightLevel;
             currentLightLevel = inputBuffer.substring(4).toInt();
           }
-        } else if (inputBuffer.startsWith("TEMP:")) {
-          if (inputBuffer.length() > 5) {
-            extern float cachedTemperature;
-            cachedTemperature = inputBuffer.substring(5).toFloat();
-          }
         }
       }
       inputBuffer = "";
@@ -287,8 +282,6 @@ void handleUnoCommunication() {
     currentPIRState = false;
     extern int currentLightLevel;
     currentLightLevel = 500;
-    extern float cachedTemperature;
-    cachedTemperature = 25.0f;
     pushUnoOnlineStatus(false);
   }
 }

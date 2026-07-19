@@ -15,7 +15,6 @@ DHT dht(DHT_PIN, DHT_TYPE);
 
 int currentHour = 0;
 int currentLightLevel = 500;
-float cachedTemperature = 25.0f; // Default starting temp
 
 void setupSensors() {
   analogReadResolution(12);
@@ -42,7 +41,9 @@ void setupRTC() {
 }
 
 float readTemperature() {
-  return cachedTemperature;
+  float t = dht.readTemperature();
+  if (isnan(t)) return -999.0f;
+  return t;
 }
 
 int readLightLevel() {
@@ -60,6 +61,15 @@ bool readHumidity(float &humidity) {
   }
 
   humidity = value;
+  return true;
+}
+
+bool readDHTTemperature(float &tempVal) {
+  float value = dht.readTemperature();
+  if (isnan(value)) {
+    return false;
+  }
+  tempVal = value;
   return true;
 }
 
@@ -100,7 +110,7 @@ void getTimeString(char *buffer) {
 int readAirQualityPPM() {
   int raw = analogRead(35);
   float voltage = raw * (3.3f / 4095.0f);
-  float ppm = 400.0f + (voltage / 3.3f) * 1600.0f;
+  float ppm = (voltage / 3.3f) * 1600.0f;
   if (ppm < 350.0f) ppm = 350.0f;
   if (ppm > 2000.0f) ppm = 2000.0f;
   return (int)ppm;

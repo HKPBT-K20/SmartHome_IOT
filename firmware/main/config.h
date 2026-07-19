@@ -1,12 +1,12 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define WIFI_SSID     "WIFI_SSID" // Tên wifi
-#define WIFI_PASS     "WIFI_PASS" // Mật khẩu wifi
-#define FIREBASE_URL  "FIREBASE_URL"
-#define FIREBASE_KEY  "FIREBASE_KEY" // API key
-#define SECURITY_PIN  "SECURITY_PIN" // Mã PIN cửa
-#define RFID_UID      "RFID_UID" // UID thẻ từ
+#define WIFI_SSID     "Huyvo"//HuyVo
+#define WIFI_PASS     "khongcomatkhau"//khongcomatkhau
+#define FIREBASE_URL  "https://smart-home-iot-d1c77-default-rtdb.asia-southeast1.firebasedatabase.app"
+#define FIREBASE_KEY  "AIzaSyDo0ncLdnDplJoessMju0EKoGQGsvDealI"
+#define SECURITY_PIN  "123456"
+#define RFID_UID      "4362F506"
 
 #define RTC_ENABLED   // DS1307 có pin nuôi — dùng làm NTP fallback cho SSL
 

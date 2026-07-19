@@ -28,22 +28,48 @@ void updateDisplay() {
   if (millis() - lastUpdate < 1000) return;
   lastUpdate = millis();
 
-  char timeBuffer[20];
-  getTimeString(timeBuffer);
   float temperature = readTemperature();
+  float humidity = 0.0f;
+  bool hasHumidity = readHumidity(humidity);
+  int light = readLightLevel();
+  extern int readAirQualityPPM();
+  int air = readAirQualityPPM();
 
-  lcd.setCursor(0, 0);
-  for (int i = 0; i < 8; i++) lcd.print(timeBuffer[i]);
+  char line0[17];
+  char tempStr[10];
   extern bool unoOnline;
-  if (!unoOnline) {
-    lcd.print(" UNO ERR");
+  if (unoOnline) {
+    char tVal[10];
+    dtostrf(temperature, 4, 1, tVal);
+    snprintf(tempStr, sizeof(tempStr), "%s%c", tVal, 223);
   } else {
-    lcd.print("        ");
+    strcpy(tempStr, "ERR ");
   }
 
+  char humStr[10];
+  if (hasHumidity) {
+    dtostrf(humidity, 4, 1, humStr);
+  } else {
+    strcpy(humStr, "ERR ");
+  }
+
+  snprintf(line0, sizeof(line0), "T:%-5s  H:%-4s%%", tempStr, humStr);
+
+  char line1[17];
+  char lightStr[10];
+  if (unoOnline) {
+    snprintf(lightStr, sizeof(lightStr), "%-4d", light);
+  } else {
+    strcpy(lightStr, "ERR ");
+  }
+
+  char airStr[10];
+  snprintf(airStr, sizeof(airStr), "%-4d", air);
+
+  snprintf(line1, sizeof(line1), "L:%-4s    A:%-4s", lightStr, airStr);
+
+  lcd.setCursor(0, 0);
+  lcd.print(line0);
   lcd.setCursor(0, 1);
-  lcd.print("T:");
-  lcd.print(temperature, 1);
-  lcd.print((char)223); // ký tự °
-  lcd.print("C         ");
+  lcd.print(line1);
 }

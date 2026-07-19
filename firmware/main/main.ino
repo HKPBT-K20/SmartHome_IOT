@@ -51,6 +51,7 @@ void loop() {
     lastAirPush = now;
   }
 
+
   if (now - lastSensorPush >= 30000) {
     pushSensors();
     lastSensorPush = now;

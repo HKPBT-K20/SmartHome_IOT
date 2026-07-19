@@ -37,6 +37,7 @@ void setRelay(int ch, bool on);
 float readTemperature();
 int readLightLevel();
 bool readHumidity(float &humidity);
+bool readDHTTemperature(float &tempVal);
 void getTimeString(char *buffer);
 void pushSecurityMotion(bool detected);
 void pushSecurityAlarm(bool active);

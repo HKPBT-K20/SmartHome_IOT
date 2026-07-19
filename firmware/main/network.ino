@@ -108,6 +108,17 @@ static void syncSecurityMode() {
   securityMode[sizeof(securityMode) - 1] = '\0';
 }
 
+static bool scheduleActivePeriod[4] = {false, false, false, false};
+static int  scheduleSkipDay[4] = {-1, -1, -1, -1};
+
+static int getCurrentDayOfYear() {
+  struct tm t;
+  if (getLocalTime(&t)) {
+    return t.tm_yday;
+  }
+  return -2;
+}
+
 static void syncScheduleChannel(int ch, int minutesOfDay) {
   if (!firebaseReady || !Firebase.ready()) return;
   if (ch != 1 && ch != 3) return;
@@ -139,13 +150,38 @@ static void syncScheduleChannel(int ch, int minutesOfDay) {
   relaySchedules[ch].valid = true;
 
   if (!relaySchedules[ch].enabled) {
+    scheduleActivePeriod[ch] = false;
     return;
   }
 
-  bool desiredOn = isScheduleActive(relaySchedules[ch], minutesOfDay);
-  if (relayState[ch] != desiredOn) {
-    setRelay(ch, desiredOn);
-    pushRelayState(ch, desiredOn);
+  int today = getCurrentDayOfYear();
+  bool isInsideWindow = isScheduleActive(relaySchedules[ch], minutesOfDay);
+
+  if (isInsideWindow) {
+    if (scheduleSkipDay[ch] == today) {
+      return;
+    }
+
+    if (!scheduleActivePeriod[ch]) {
+      setRelay(ch, true);
+      pushRelayState(ch, true);
+      scheduleActivePeriod[ch] = true;
+    } else {
+      if (!relayState[ch]) {
+        scheduleSkipDay[ch] = today;
+        scheduleActivePeriod[ch] = false;
+        Serial.printf("Schedule: Manual override OFF on CH%d for today only.\n", ch);
+      }
+    }
+  } else {
+    if (scheduleActivePeriod[ch]) {
+      setRelay(ch, false);
+      pushRelayState(ch, false);
+      scheduleActivePeriod[ch] = false;
+    }
+    if (scheduleSkipDay[ch] != -1 && scheduleSkipDay[ch] != today) {
+      scheduleSkipDay[ch] = -1;
+    }
   }
 }
 
@@ -209,6 +245,9 @@ void setupFirebase() {
 
   fbConfig.database_url               = FIREBASE_URL;
   fbConfig.signer.tokens.legacy_token = FIREBASE_KEY;
+  fbConfig.timeout.socketConnection   = 1500; // Giới hạn timeout 1.5s để tránh block loop khi SSL lỗi
+
+  Serial.printf("[Debug] Free Heap before Firebase: %u bytes\n", ESP.getFreeHeap());
 
   Firebase.begin(&fbConfig, &auth);
   Firebase.reconnectWiFi(true);
@@ -233,7 +272,7 @@ void pushAirQuality() {
     Serial.println("Air quality push error: " + fbdo.errorReason());
   }
 
-  if (airVal > 1210) {
+  if (airVal > 600) {
     extern void alertBuzzer(int beeps);
     alertBuzzer(5);
   }
@@ -250,7 +289,10 @@ void pushSensors() {
   getTimeString(timeStr);
 
   bool ok = true;
-  ok &= Firebase.setFloat (fbdo, "/sensors/temp",  temp);
+  if (temp != -999.0f) {
+    ok &= Firebase.setFloat(fbdo, "/sensors/temp",
+     temp);
+  }
   ok &= Firebase.setInt   (fbdo, "/sensors/light", light);
   ok &= Firebase.setString(fbdo, "/sensors/time",  timeStr);
 
@@ -259,10 +301,12 @@ void pushSensors() {
   }
 
   if (ok) {
-    if (hasHumidity) {
-      Serial.printf("Sensors pushed: %.1f C, light=%d, humidity=%.1f%%\n", temp, light, humidity);
+    if (temp != -999.0f) {
+      Serial.printf("Sensors pushed: DHT11_Temp=%.1f C, light=%d, humidity=%s\n",
+        temp, light, hasHumidity ? String(humidity, 1).c_str() : "N/A");
     } else {
-      Serial.printf("Sensors pushed: %.1f C, light=%d, humidity=N/A\n", temp, light);
+      Serial.printf("Sensors pushed: DHT11_Temp=ERR, light=%d, humidity=%s\n",
+        light, hasHumidity ? String(humidity, 1).c_str() : "N/A");
     }
   } else {
     Serial.println("Sensor push error: " + fbdo.errorReason());
