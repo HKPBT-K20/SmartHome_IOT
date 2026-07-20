@@ -110,6 +110,8 @@ void checkRFID() {
       pushRejectedRescan(uid);
     } else if (cardStatus == "pending") {
       Serial.println("[RFID] UID: " + uid + " -> PENDING (already waiting for approval)");
+    } else if (cardStatus == "approved") {
+      Serial.println("[RFID] UID: " + uid + " -> APPROVED BUT INACTIVE (denied access, not pushing again)");
     } else {
       // Thẻ chưa từng xuất hiện
       Serial.println("[RFID] UID: " + uid + " -> PENDING (pushed to Firebase)");
