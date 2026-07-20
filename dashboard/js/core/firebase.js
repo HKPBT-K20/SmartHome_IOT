@@ -5,7 +5,8 @@ import {
     onValue,
     set,
     update,
-    remove
+    remove,
+    get
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
 const DEFAULT_FIREBASE_CONFIG = {
@@ -79,7 +80,7 @@ try {
 
 export { app, db };
 
-export { ref, onValue, set, update, remove };
+export { ref, onValue, set, update, remove, get };
 
 export const MOCK_ACCOUNT = runtimeEnv.MOCK_ACCOUNT || {
     email: firstDefined(runtimeEnv.MOCK_ACCOUNT_EMAIL, runtimeEnv.MOCK_EMAIL, "hkpbSmartHome@gmail.com"),

@@ -412,9 +412,10 @@
                     <button data-target="page-rfid"
                         class="nav-btn w-full flex items-center justify-between gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-2xl transition">
                         <span class="flex items-center gap-3">
-                            <i class="fa-solid fa-id-card"></i> Thẻ RFID
+                            <i class="fa-solid fa-id-card"></i> Quản lý thẻ từ
                         </span>
-                        <span id="rfid-nav-badge" class="hidden min-w-[20px] h-5 px-1.5 rounded-full bg-amber-400 text-slate-900 text-[11px] font-bold flex items-center justify-center">0</span>
+                        <span id="rfid-nav-badge"
+                            class="hidden min-w-[20px] h-5 px-1.5 rounded-full bg-amber-400 text-slate-900 text-[11px] font-bold flex items-center justify-center">0</span>
                     </button>
                 </nav>
             </div>
@@ -742,35 +743,152 @@
                     </div>
                 </div>
 
-                <div id="page-rfid" class="page-content space-y-6 hidden">
-                    <!-- Section: Thẻ đã cấp quyền -->
-                    <div class="panel-card p-4 md:p-6 rounded-[28px] border border-slate-700/60 shadow-[0_25px_60px_rgba(15,23,42,0.2)]">
-                        <div class="flex items-center justify-between gap-3 mb-4">
-                            <h3 class="text-lg font-semibold text-white">
-                                <i class="fa-solid fa-id-badge text-emerald-400 mr-2"></i>Thẻ đã được cấp quyền
-                            </h3>
-                            <span class="text-xs text-slate-500">Từ /authorized_cards</span>
+                <div id="page-rfid" class="page-content space-y-4 hidden">
+                    <!-- Ô 1 — Thẻ được cấp quyền (Rose/Red theme) -->
+                    <div
+                        class="accordion-item panel-card rounded-[28px] border border-rose-500/30 overflow-hidden shadow-[0_20px_45px_rgba(15,23,42,0.2)]">
+                        <div class="accordion-header flex items-center justify-between p-5 cursor-pointer bg-rose-500/10 hover:bg-rose-500/15 transition"
+                            data-panel="1">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="w-10 h-10 rounded-2xl bg-rose-500/20 border border-rose-400/30 flex items-center justify-center text-rose-300 text-lg">
+                                    <i class="fa-solid fa-shield-check"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
+                                        Thẻ được cấp quyền
+                                        <span id="panel1-count"
+                                            class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-400/30">--</span>
+                                    </h3>
+                                    <p class="text-xs text-slate-400">Danh sách thẻ đang được phép ra/vào hệ thống</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" id="btn-refresh-panel1"
+                                    class="btn-refresh-panel p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition"
+                                    title="Tải lại ô 1" data-panel="1">
+                                    <i class="fa-solid fa-arrows-rotate text-sm"></i>
+                                </button>
+                                <i id="accordion-icon-1"
+                                    class="fa-solid fa-chevron-down text-slate-400 transition-transform duration-300"></i>
+                            </div>
                         </div>
-                        <div id="authorized-cards-list" class="space-y-3">
-                            <div class="text-center py-8 text-slate-500 text-sm">
-                                <i class="fa-solid fa-id-card text-2xl mb-3 block opacity-40"></i>
-                                Đang tải...
+                        <div id="panel1-body" class="hidden border-t border-rose-500/20 p-4 md:p-6 space-y-3 ">
+                            <div id="panel1-list" class="space-y-3">
+                                <div class="text-center py-6 text-slate-500 text-sm">Nhấp vào để tải danh sách thẻ...
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Section: Danh sách thẻ pending -->
-                    <div class="panel-card p-4 md:p-6 rounded-[28px] border border-slate-700/60 shadow-[0_25px_60px_rgba(15,23,42,0.2)]">
-                        <div class="flex items-center justify-between gap-3 mb-4">
-                            <h3 class="text-lg font-semibold text-white">
-                                <i class="fa-solid fa-satellite-dish text-amber-400 mr-2"></i>Lịch sử thẻ quẹt
-                            </h3>
-                            <span class="text-xs text-slate-500">Từ /pending_cards · Mới nhất ở dưới</span>
+                    <!-- Ô 2 — Thẻ bị khoá (Amber/Orange theme) -->
+                    <div
+                        class="accordion-item panel-card rounded-[28px] border border-amber-500/30 overflow-hidden shadow-[0_20px_45px_rgba(15,23,42,0.2)]">
+                        <div class="accordion-header flex items-center justify-between p-5 cursor-pointer bg-amber-500/10 hover:bg-amber-500/15 transition"
+                            data-panel="2">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-amber-300 text-lg">
+                                    <i class="fa-solid fa-lock"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
+                                        Thẻ bị khoá
+                                        <span id="panel2-count"
+                                            class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-400/30">--</span>
+                                    </h3>
+                                    <p class="text-xs text-slate-400">Danh sách thẻ tạm thời bị vô hiệu hoá</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" id="btn-refresh-panel2"
+                                    class="btn-refresh-panel p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition"
+                                    title="Tải lại ô 2" data-panel="2">
+                                    <i class="fa-solid fa-arrows-rotate text-sm"></i>
+                                </button>
+                                <i id="accordion-icon-2"
+                                    class="fa-solid fa-chevron-down text-slate-400 transition-transform duration-300"></i>
+                            </div>
                         </div>
-                        <div id="pending-cards-list" class="space-y-3">
-                            <div class="text-center py-8 text-slate-500 text-sm">
-                                <i class="fa-solid fa-satellite-dish text-2xl mb-3 block opacity-40"></i>
-                                Đang đồng bộ...
+                        <div id="panel2-body" class="hidden border-t border-amber-500/20 p-4 md:p-6 space-y-3">
+                            <div id="panel2-list" class="space-y-3">
+                                <div class="text-center py-6 text-slate-500 text-sm">Nhấp vào để tải danh sách thẻ...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ô 3 — Thẻ chưa đăng ký (Emerald/Green theme) -->
+                    <div
+                        class="accordion-item panel-card rounded-[28px] border border-emerald-500/30 overflow-hidden shadow-[0_20px_45px_rgba(15,23,42,0.2)]">
+                        <div class="accordion-header flex items-center justify-between p-5 cursor-pointer bg-emerald-500/10 hover:bg-emerald-500/15 transition"
+                            data-panel="3">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300 text-lg">
+                                    <i class="fa-solid fa-credit-card"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
+                                        Thẻ chưa đăng ký
+                                        <span id="panel3-count"
+                                            class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">--</span>
+                                    </h3>
+                                    <p class="text-xs text-slate-400">Lịch sử quẹt thẻ lạ, chờ duyệt hoặc bị từ chối</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" id="btn-refresh-panel3"
+                                    class="btn-refresh-panel p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition"
+                                    title="Tải lại ô 3" data-panel="3">
+                                    <i class="fa-solid fa-arrows-rotate text-sm"></i>
+                                </button>
+                                <i id="accordion-icon-3"
+                                    class="fa-solid fa-chevron-down text-slate-400 transition-transform duration-300"></i>
+                            </div>
+                        </div>
+                        <div id="panel3-body" class="hidden border-t border-emerald-500/20 p-4 md:p-6 space-y-3">
+                            <div id="panel3-list" class="space-y-3">
+                                <div class="text-center py-6 text-slate-500 text-sm">Nhấp vào để tải danh sách thẻ...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ô 4 — Thẻ bị xoá (Teal/Slate theme) -->
+                    <div
+                        class="accordion-item panel-card rounded-[28px] border border-teal-500/30 overflow-hidden shadow-[0_20px_45px_rgba(15,23,42,0.2)]">
+                        <div class="accordion-header flex items-center justify-between p-5 cursor-pointer bg-teal-500/10 hover:bg-teal-500/15 transition"
+                            data-panel="4">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="w-10 h-10 rounded-2xl bg-teal-500/20 border border-teal-400/30 flex items-center justify-center text-teal-300 text-lg">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
+                                        Thẻ bị xoá
+                                        <span id="panel4-count"
+                                            class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-500/20 text-teal-300 border border-teal-400/30">--</span>
+                                    </h3>
+                                    <p class="text-xs text-slate-400">Danh sách thẻ đã xoá khỏi hệ thống, có thể khôi
+                                        phục</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" id="btn-refresh-panel4"
+                                    class="btn-refresh-panel p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition"
+                                    title="Tải lại ô 4" data-panel="4">
+                                    <i class="fa-solid fa-arrows-rotate text-sm"></i>
+                                </button>
+                                <i id="accordion-icon-4"
+                                    class="fa-solid fa-chevron-down text-slate-400 transition-transform duration-300"></i>
+                            </div>
+                        </div>
+                        <div id="panel4-body" class="hidden border-t border-teal-500/20 p-4 md:p-6 space-y-3 ">
+                            <div id="panel4-list" class="space-y-3">
+                                <div class="text-center py-6 text-slate-500 text-sm">Nhấp vào để tải danh sách thẻ...
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -785,14 +903,16 @@
     <!-- Modal thêm nhãn khi duyệt thẻ RFID -->
     <div id="modal-add-card"
         class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-950/70 backdrop-blur-sm px-4">
-        <div class="w-full max-w-md rounded-[28px] border border-slate-700/70 bg-slate-950/95 p-6 shadow-2xl shadow-black/40">
+        <div
+            class="w-full max-w-md rounded-[28px] border border-slate-700/70 bg-slate-950/95 p-6 shadow-2xl shadow-black/40">
             <div class="flex items-start gap-3 mb-5">
                 <div class="mt-1 text-emerald-400 text-xl">
                     <i class="fa-solid fa-id-card"></i>
                 </div>
                 <div class="flex-1">
                     <h3 class="text-lg font-semibold text-white">Duyệt thẻ RFID</h3>
-                    <p class="mt-1 text-sm text-slate-400">UID: <span id="modal-card-uid-display" class="font-mono text-sky-300 font-semibold">--</span></p>
+                    <p class="mt-1 text-sm text-slate-400">UID: <span id="modal-card-uid-display"
+                            class="font-mono text-sky-300 font-semibold">--</span></p>
                 </div>
             </div>
             <div class="mb-5">
