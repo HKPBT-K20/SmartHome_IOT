@@ -61,7 +61,7 @@ function renderLoadingState() {
         </div>`;
 }
 
-// ── RENDER PANEL 1: THẺ ĐƯỢC CẤP QUYỀN (Rose/Red) ─────────────
+// ── RENDER PANEL 1: THẺ ĐƯỢC CẤP QUYỀN (Emerald/Green) ─────────
 async function loadPanel1(force = false) {
     const listEl = document.getElementById("panel1-list");
     const countEl = document.getElementById("panel1-count");
@@ -111,34 +111,34 @@ async function loadPanel1(force = false) {
     // 1. Thẻ mặc định
     localEntries.forEach(card => {
         html += `
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 glass-panel rounded-2xl border border-indigo-500/30">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 glass-panel rounded-2xl border border-emerald-500/35 bg-emerald-50/60 dark:bg-transparent">
                 <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 shrink-0">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-700 shrink-0">
                         <i class="fa-solid fa-memory text-sm"></i>
                     </div>
                     <div class="min-w-0">
                         <div class="flex items-center gap-2">
-                            <span class="font-mono text-sm font-bold text-white">${card.uid}</span>
-                            <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">Thẻ mặc định</span>
+                            <span class="font-mono text-sm font-bold text-slate-900 dark:text-white">${card.uid}</span>
+                            <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700 border border-emerald-300">Thẻ mặc định</span>
                         </div>
-                        <p class="text-xs text-slate-400 mt-0.5">${card.label} &nbsp;·&nbsp; Tích hợp firmware</p>
+                        <p class="text-xs text-slate-600 dark:text-slate-400 mt-0.5">${card.label} &nbsp;·&nbsp; Tích hợp firmware</p>
                     </div>
                 </div>
-                <div class="text-xs text-slate-500 italic shrink-0">Không thể sửa/xoá</div>
+                <div class="text-xs text-slate-600 dark:text-slate-500 italic shrink-0">Không thể sửa/xoá</div>
             </div>`;
     });
 
     // 2. Thẻ Firebase
     authEntries.forEach(card => {
         html += `
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 glass-panel rounded-2xl border border-rose-500/20" data-uid="${card.uid}">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 glass-panel rounded-2xl border border-emerald-500/35 bg-emerald-50/45 dark:bg-transparent" data-uid="${card.uid}">
                 <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-9 h-9 rounded-xl bg-rose-500/15 border border-rose-400/25 flex items-center justify-center text-rose-300 shrink-0">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-100 border border-emerald-300 flex items-center justify-center text-emerald-700 shrink-0">
                         <i class="fa-solid fa-id-badge text-sm"></i>
                     </div>
                     <div class="min-w-0">
-                        <p class="font-mono text-sm font-semibold text-white">${card.uid}</p>
-                        <p class="text-xs text-slate-400 truncate">${card.label} &nbsp;·&nbsp; Cấp lúc: ${card.addedAt}</p>
+                        <p class="font-mono text-sm font-semibold text-slate-900 dark:text-white">${card.uid}</p>
+                        <p class="text-xs text-slate-600 dark:text-slate-400 truncate">${card.label} &nbsp;·&nbsp; Cấp lúc: ${card.addedAt}</p>
                     </div>
                 </div>
                 <div class="flex gap-2 shrink-0">
@@ -305,21 +305,21 @@ async function loadPanel3(force = false) {
         }
 
         const labelDisplay = label
-            ? `<span class="text-xs text-slate-400">Nhãn: <span class="text-emerald-300 font-medium">${label}</span></span>`
+            ? `<span class="text-xs text-slate-600 dark:text-slate-400">Nhãn: <span class="text-emerald-700 dark:text-emerald-300 font-medium">${label}</span></span>`
             : "";
 
         return `
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 glass-panel rounded-2xl border ${rowBorder}" data-uid="${uid}">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 glass-panel rounded-2xl border ${rowBorder} bg-rose-50/50 dark:bg-transparent" data-uid="${uid}">
                 <div class="flex items-start sm:items-center gap-3 min-w-0 flex-1">
-                    <div class="w-9 h-9 rounded-xl bg-slate-700/60 border border-slate-600/40 flex items-center justify-center text-slate-300 shrink-0 mt-0.5 sm:mt-0">
+                    <div class="w-9 h-9 rounded-xl bg-rose-100 border border-rose-300 flex items-center justify-center text-rose-700 shrink-0 mt-0.5 sm:mt-0">
                         <i class="fa-solid fa-credit-card text-sm"></i>
                     </div>
                     <div class="min-w-0 flex-1">
                         <div class="flex flex-wrap items-center gap-2 mb-1">
-                            <span class="font-mono text-sm font-bold text-white">${uid}</span>
+                            <span class="font-mono text-sm font-bold text-slate-900 dark:text-white">${uid}</span>
                             ${badge}
                         </div>
-                        <p class="text-xs text-slate-500">${display_time}</p>
+                        <p class="text-xs text-slate-600 dark:text-slate-500">${display_time}</p>
                         ${labelDisplay}
                     </div>
                 </div>
@@ -337,7 +337,7 @@ async function loadPanel3(force = false) {
     panelLoaded[3] = true;
 }
 
-// ── RENDER PANEL 4: THẺ BỊ XOÁ (Teal/Slate) ───────────────────
+// ── RENDER PANEL 4: THẺ BỊ XOÁ (Rose/Red) ─────────────────────
 async function loadPanel4(force = false) {
     const listEl = document.getElementById("panel4-list");
     const countEl = document.getElementById("panel4-count");
@@ -370,16 +370,16 @@ async function loadPanel4(force = false) {
     }
 
     listEl.innerHTML = entries.map(card => `
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 glass-panel rounded-2xl border border-teal-500/30" data-uid="${card.uid}">
-            <div class="flex items-center gap-3 min-w-0">
-                <div class="w-9 h-9 rounded-xl bg-teal-500/20 border border-teal-400/30 flex items-center justify-center text-teal-300 shrink-0">
-                    <i class="fa-solid fa-trash-can text-sm"></i>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 glass-panel rounded-2xl border border-rose-500/35 bg-rose-50/60 dark:bg-transparent" data-uid="${card.uid}">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-9 h-9 rounded-xl bg-rose-100 border border-rose-300 flex items-center justify-center text-rose-700 shrink-0">
+                        <i class="fa-solid fa-trash-can text-sm"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="font-mono text-sm font-semibold text-slate-900 dark:text-white">${card.uid}</p>
+                        <p class="text-xs text-slate-600 dark:text-slate-400 truncate">${card.label} &nbsp;·&nbsp; Thêm lúc: ${card.addedAt}</p>
+                    </div>
                 </div>
-                <div class="min-w-0">
-                    <p class="font-mono text-sm font-semibold text-white">${card.uid}</p>
-                    <p class="text-xs text-slate-400 truncate">${card.label} &nbsp;·&nbsp; Thêm lúc: ${card.addedAt}</p>
-                </div>
-            </div>
             <div class="flex gap-2 shrink-0">
                 <button class="btn-restore px-3 py-1.5 text-xs font-semibold rounded-xl bg-teal-500/15 hover:bg-teal-500 text-teal-300 hover:text-white border border-teal-500/30 transition" data-uid="${card.uid}">
                     <i class="fa-solid fa-rotate-left mr-1"></i>Khôi phục
