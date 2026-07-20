@@ -189,7 +189,8 @@ export function getCurrentPageTitle(pageId) {
         "page-dashboard": "Tổng quan hệ thống",
         "page-schedule": "Cấu hình hẹn giờ tự động",
         "page-security": "Hệ thống quản lý an ninh",
-        "page-logs": "Nhật ký truy cập chi tiết"
+        "page-logs": "Nhật ký truy cập chi tiết",
+        "page-rfid": "Quản lý thẻ RFID"
     };
     return pageTitles[pageId] || "SmartHome Dashboard";
 }

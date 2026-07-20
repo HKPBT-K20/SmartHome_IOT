@@ -5,6 +5,7 @@ import { initScheduleFeature } from "./features/schedule.js";
 import { initSecurityFeature } from "./features/security.js";
 import { initLogsFeature } from "./features/logs.js";
 import { initWeatherWidget } from "./features/weather.js";
+import { initRfidManager } from "./features/rfid_manager.js";
 
 const navButtons = document.querySelectorAll(".nav-btn");
 const pages = document.querySelectorAll(".page-content");
@@ -102,3 +103,4 @@ initWeatherWidget();
 initScheduleFeature();
 initSecurityFeature();
 initLogsFeature();
+initRfidManager();
