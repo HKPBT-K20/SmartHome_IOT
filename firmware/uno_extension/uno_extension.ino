@@ -1,6 +1,18 @@
 #include <Keypad.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
+#include <EEPROM.h>
+
+#define PIN_LENGTH 6
+
+String correctPIN = "123456";
+String passwordInput = "";
+
+int wrongAttempts = 0;
+
+bool isLocked = false;
+
+unsigned long lockedUntil = 0;
 
 const byte ROWS = 4;
 const byte COLS = 4;
@@ -19,7 +31,6 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 #define DOOR_LCD_ADDRESS 0x27
 LiquidCrystal_I2C doorLcd(DOOR_LCD_ADDRESS, 16, 2);
 
-String passwordInput = "";
 static String lcdLine1 = "";
 static String lcdLine2 = "";
 
@@ -62,9 +73,84 @@ void appendChar(char keypadInput) {
   printLine2(passwordInput);
 }
 
+void verifyPIN() {
+
+    if (passwordInput == correctPIN) {
+
+      Serial.println("ACCESS_GRANTED");
+
+      printLine1("Access Granted");
+      printLine2("");
+
+      wrongAttempts = 0;
+    }
+    else {
+
+      wrongAttempts++;
+
+      Serial.println("ACCESS_DENIED");
+
+      printLine1("Wrong PIN");
+      printLine2("");
+
+      if (wrongAttempts >= 3) {
+
+        isLocked = true;
+        lockedUntil = millis() + 30000;
+
+        printLine1("Locked 30 sec");
+      }
+    }
+
+    passwordInput = "";
+  }
+
 void resetPasswordInput() {
   passwordInput = "";
   printLine2(passwordInput);
+}
+
+  void loadPassword() {
+
+    char buf[PIN_LENGTH + 1];
+
+    for (int i = 0; i < PIN_LENGTH; i++) {
+      buf[i] = EEPROM.read(i);
+    }
+
+    buf[PIN_LENGTH] = '\0';
+
+    bool empty = true;
+
+    for (int i = 0; i < PIN_LENGTH; i++) {
+      if (buf[i] != 0xFF) {
+        empty = false;
+        break;
+      }
+    }
+
+    if (empty) {
+
+      correctPIN = "123456";
+
+      for (int i = 0; i < PIN_LENGTH; i++) {
+        EEPROM.write(i, correctPIN[i]);
+      }
+
+    } else {
+
+      correctPIN = String(buf);
+
+    }
+  }
+
+void savePassword(String newPIN) {
+
+  correctPIN = newPIN;
+
+  for(int i=0;i<PIN_LENGTH;i++) {
+    EEPROM.write(i,newPIN[i]);
+  }
 }
 
 void clear() {
@@ -72,6 +158,8 @@ void clear() {
 }
 
 void setup() {
+
+  loadPassword();
   Serial.begin(9600);
   pinMode(10, INPUT);
 
@@ -84,9 +172,29 @@ void setup() {
 void loop() {
   char key = keypad.getKey();
   if (key) {
-    appendChar(key);
-    Serial.print("KEY:");
-    Serial.println(key);
+
+    if (isLocked) {
+
+      if (millis() < lockedUntil) {
+        return;
+      }
+
+      isLocked = false;
+      wrongAttempts = 0;
+    }
+
+    if (key == '#') {
+
+      verifyPIN();
+    }
+    else if (key == '*') {
+
+      resetPasswordInput();
+    }
+    else {
+
+      appendChar(key);
+    }
   }
 
   unsigned long now = millis();
@@ -123,6 +231,7 @@ void loop() {
     Serial.println(currentVal);
   }
 
+
   static unsigned long lastSentTempTime = 0;
   if (now - lastSentTempTime >= 5000) {
     lastSentTempTime = now;
@@ -137,5 +246,6 @@ void loop() {
     Serial.print("TEMP:");
     Serial.println(temp, 1);
   }
+
 
 }

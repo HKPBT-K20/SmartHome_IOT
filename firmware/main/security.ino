@@ -31,11 +31,6 @@ MFRC522 rfid(SS_PIN, RST_PIN);
 String validUIDs[] = {RFID_UID};
 int    uidCount    = sizeof(validUIDs) / sizeof(validUIDs[0]);
 
-String        correctPIN    = SECURITY_PIN;
-String        inputPIN      = "";
-int           wrongAttempts = 0;
-bool          isLocked      = false;
-unsigned long lockedUntil   = 0;
 
 AccessLog lastLog;
 bool      newLogAvailable = false;
@@ -157,24 +152,8 @@ void fillAccessLog(const char* authMethod, const char* identityType, const char*
   newLogAvailable = true;
 }
 
-void checkKeypad() {
-  if (isLocked && millis() >= lockedUntil) {
-    isLocked      = false;
-    wrongAttempts = 0;
-    Serial.println("Lockout lifted");
-  }
-}
 
-void processKey(char key) {
-  if (isLocked) {
-    if (millis() < lockedUntil) {
-      return;
-    } else {
-      isLocked      = false;
-      wrongAttempts = 0;
-      Serial.println("Lockout lifted");
-    }
-  }
+
 
   if (key == '#') {
     bool granted = (inputPIN == correctPIN);
@@ -282,10 +261,17 @@ void handleUnoCommunication() {
           pushUnoOnlineStatus(true);
         }
 
-        if (inputBuffer.startsWith("KEY:")) {
-          if (inputBuffer.length() > 4) {
-            processKey(inputBuffer.charAt(4));
-          }
+        if (inputBuffer == "ACCESS_GRANTED") {
+
+          Serial.println("[UNO] PIN verified");
+
+          openDoor();
+        }
+        else if (inputBuffer == "ACCESS_DENIED") {
+
+          Serial.println("[UNO] PIN denied");
+
+          alertBuzzer();
         } else if (inputBuffer.startsWith("PIR:")) {
           if (inputBuffer.length() > 4) {
             currentPIRState = (inputBuffer.charAt(4) == '1');
