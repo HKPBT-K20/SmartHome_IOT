@@ -380,13 +380,21 @@ async function loadPanel4(force = false) {
                     <p class="text-xs text-slate-400 truncate">${card.label} &nbsp;·&nbsp; Thêm lúc: ${card.addedAt}</p>
                 </div>
             </div>
-            <button class="btn-restore shrink-0 px-3 py-1.5 text-xs font-semibold rounded-xl bg-teal-500/15 hover:bg-teal-500 text-teal-300 hover:text-white border border-teal-500/30 transition" data-uid="${card.uid}">
-                <i class="fa-solid fa-rotate-left mr-1"></i>Khôi phục
-            </button>
+            <div class="flex gap-2 shrink-0">
+                <button class="btn-restore px-3 py-1.5 text-xs font-semibold rounded-xl bg-teal-500/15 hover:bg-teal-500 text-teal-300 hover:text-white border border-teal-500/30 transition" data-uid="${card.uid}">
+                    <i class="fa-solid fa-rotate-left mr-1"></i>Khôi phục
+                </button>
+                <button class="btn-purge px-3 py-1.5 text-xs font-semibold rounded-xl bg-rose-500/15 hover:bg-rose-500 text-rose-300 hover:text-white border border-rose-500/30 transition" data-uid="${card.uid}">
+                    <i class="fa-solid fa-circle-xmark mr-1"></i>Xoá vĩnh viễn
+                </button>
+            </div>
         </div>`).join("");
 
     listEl.querySelectorAll(".btn-restore").forEach(btn => {
         btn.addEventListener("click", () => restoreCard(btn.dataset.uid));
+    });
+    listEl.querySelectorAll(".btn-purge").forEach(btn => {
+        btn.addEventListener("click", () => purgeCard(btn.dataset.uid));
     });
 
     panelLoaded[4] = true;
@@ -477,6 +485,37 @@ async function restoreCard(uid) {
     } catch (err) {
         console.error("[RFID] restoreCard error:", err);
         showToast("Lỗi khôi phục thẻ", err.message, "error");
+    }
+}
+
+// [Xoá vĩnh viễn]: xoá hẳn khỏi database (với confirm modal)
+async function purgeCard(uid) {
+    const confirmed = await confirmAction({
+        title: "Xoá vĩnh viễn thẻ?",
+        message: `Xoá vĩnh viễn thẻ ${uid}? Hành động này KHÔNG THỂ hoàn tác — thẻ sẽ biến mất hoàn toàn khỏi hệ thống.`,
+        confirmText: "Xoá vĩnh viễn",
+        danger: true
+    });
+
+    if (!confirmed) return;
+
+    try {
+        if (USE_MOCK_DEMO) {
+            showToast("Mock mode", "Thao tác bị bỏ qua trong mock mode.", "warning");
+            return;
+        }
+        await Promise.all([
+            remove(ref(db, `authorized_cards/${uid}`)),
+            remove(ref(db, `revoked_cards/${uid}`)),
+            remove(ref(db, `pending_cards/${uid}`))
+        ]);
+        showToast("Đã xoá vĩnh viễn", `Thẻ ${uid} đã bị xoá hoàn toàn khỏi hệ thống.`, "success");
+
+        loadPanel4(true);
+        if (panelExpanded[1] || panelLoaded[1]) loadPanel1(true);
+    } catch (err) {
+        console.error("[RFID] purgeCard error:", err);
+        showToast("Lỗi xoá vĩnh viễn", err.message, "error");
     }
 }
 
