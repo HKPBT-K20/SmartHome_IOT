@@ -1,5 +1,4 @@
 #include <Wire.h>
-#include <RTClib.h>
 #include <DHT.h>
 #include "types.h"
 
@@ -10,7 +9,6 @@
 #define DHT_PIN  27
 #define DHT_TYPE  DHT11
 
-RTC_DS1307 rtc;
 DHT dht(DHT_PIN, DHT_TYPE);
 
 int currentHour = 0;
@@ -22,23 +20,7 @@ void setupSensors() {
   Serial.println("Sensor module ready.");
 }
 
-void setupRTC() {
 
-#ifdef RTC_ENABLED
-  if (!rtc.begin()) {
-    Serial.println("WARNING: RTC module not found — running in test mode");
-    return; // fallback, không treo hệ thống
-  }
-
-  if (!rtc.isrunning()) {
-    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-  }
-
-  Serial.println("RTC initialized.");
-#else
-  Serial.println("RTC: TEST MODE (define RTC_ENABLED to activate)");
-#endif
-}
 
 float readTemperature() {
   float t = dht.readTemperature();
@@ -78,13 +60,13 @@ bool readDHTTemperature(float &tempVal) {
 // =====================================================
 
 void updateTime() {
-#ifdef RTC_ENABLED
-  DateTime now = rtc.now();
-  currentHour = now.hour();
-#else
-  unsigned long totalSeconds = millis() / 1000;
-  currentHour = (totalSeconds / 3600) % 24;
-#endif
+  struct tm t;
+  if (getLocalTime(&t) && t.tm_year > 120) {
+    currentHour = t.tm_hour;
+  } else {
+    unsigned long totalSeconds = millis() / 1000;
+    currentHour = (totalSeconds / 3600) % 24;
+  }
 }
 
 // =====================================================
@@ -92,19 +74,19 @@ void updateTime() {
 // =====================================================
 
 void getTimeString(char *buffer) {
-#ifdef RTC_ENABLED
-  DateTime now = rtc.now();
-  sprintf(buffer,
-          "%02d:%02d:%02d %02d/%02d/%02d",
-          now.hour(), now.minute(), now.second(),
-          now.day(), now.month(), now.year() % 100);
-#else
-  unsigned long totalSeconds = millis() / 1000;
-  int hours   = (totalSeconds / 3600) % 24;
-  int minutes = (totalSeconds / 60) % 60;
-  int seconds = totalSeconds % 60;
-  sprintf(buffer, "%02d:%02d:%02d 01/07/26", hours, minutes, seconds);
-#endif
+  struct tm t;
+  if (getLocalTime(&t) && t.tm_year > 120) {
+    sprintf(buffer,
+            "%02d:%02d:%02d %02d/%02d/%02d",
+            t.tm_hour, t.tm_min, t.tm_sec,
+            t.tm_mday, t.tm_mon + 1, t.tm_year % 100);
+  } else {
+    unsigned long totalSeconds = millis() / 1000;
+    int hours   = (totalSeconds / 3600) % 24;
+    int minutes = (totalSeconds / 60) % 60;
+    int seconds = totalSeconds % 60;
+    sprintf(buffer, "%02d:%02d:%02d 01/07/26", hours, minutes, seconds);
+  }
 }
 
 int readAirQualityPPM() {

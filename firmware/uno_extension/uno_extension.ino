@@ -2,7 +2,11 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <EEPROM.h>
+bool changePasswordMode = false;
+bool waitingOldPassword = false;
+bool waitingNewPassword = false;
 
+String specialBuffer = "";
 #define PIN_LENGTH 6
 
 String correctPIN = "123456";
@@ -33,6 +37,82 @@ LiquidCrystal_I2C doorLcd(DOOR_LCD_ADDRESS, 16, 2);
 
 static String lcdLine1 = "";
 static String lcdLine2 = "";
+
+
+void changePassword() {
+
+  printLine1("Change Password");
+  printLine2("");
+
+  delay(2000);
+
+  passwordInput = "";
+
+  waitingOldPassword = true;
+  waitingNewPassword = false;
+
+  printLine1("Enter Old PIN");
+  printLine2("");
+}
+
+void saveNewPassword() {
+
+  if (passwordInput.length() != PIN_LENGTH) {
+
+    printLine1("Need 6 Digits");
+    printLine2("");
+
+    delay(2000);
+
+    passwordInput = "";
+
+    printLine1("Enter New PIN");
+    printLine2("");
+
+    return;
+  }
+
+  savePassword(passwordInput);
+
+  waitingNewPassword = false;
+  changePasswordMode = false;
+
+  printLine1("Password Saved");
+  printLine2("");
+
+  delay(2000);
+
+  printLine1("Welcome");
+  printLine2("");
+
+  passwordInput = "";
+}
+
+void verifyOldPassword() {
+
+  if (passwordInput == correctPIN) {
+
+    passwordInput = "";
+
+    waitingOldPassword = false;
+    waitingNewPassword = true;
+
+    printLine1("Enter New PIN");
+    printLine2("");
+  }
+  else {
+
+    passwordInput = "";
+
+    printLine1("Wrong Old PIN");
+    printLine2("");
+
+    delay(2000);
+
+    printLine1("Enter Old PIN");
+    printLine2("");
+  }
+}
 
 static void renderDoorLcd() {
   String line1 = lcdLine1;
@@ -69,8 +149,47 @@ void printLine2(String line2) {
 }
 
 void appendChar(char keypadInput) {
-  passwordInput += keypadInput;
+
+  if (passwordInput.length() < PIN_LENGTH) {
+
+    passwordInput += keypadInput;
+  }
+
   printLine2(passwordInput);
+}
+
+void handleSpecialSequence(char key) {
+
+  if (key == 'D') {
+
+    specialBuffer += 'D';
+
+    if (specialBuffer.length() > 3) {
+      specialBuffer.remove(0, 1);
+    }
+
+    return;
+  }
+
+  if (key == '#') {
+
+    if (specialBuffer == "DDD") {
+
+      specialBuffer = "";
+
+      changePasswordMode = true;
+
+      changePassword();
+
+      return;
+    }
+
+    specialBuffer = "";
+  }
+  else {
+
+    specialBuffer = "";
+  }
 }
 
 void verifyPIN() {
@@ -165,37 +284,70 @@ void setup() {
 
   doorLcd.init();
   doorLcd.backlight();
-  printLine1("Door Ready");
+  printLine1("Welcome");
+  printLine2("");
+
+  doorLcd.init();
+  doorLcd.backlight();
+  printLine1("Welcome");
   printLine2("");
 }
 
 void loop() {
   char key = keypad.getKey();
-  if (key) {
+  
 
-    if (isLocked) {
+if (key) {
 
-      if (millis() < lockedUntil) {
-        return;
-      }
+  handleSpecialSequence(key);
+  printLine1("Input PIN: ");
+  if (isLocked) {
 
-      isLocked = false;
-      wrongAttempts = 0;
+    if (millis() < lockedUntil) {
+      return;
     }
+
+    isLocked = false;
+    wrongAttempts = 0;
+  }
+
+  if (changePasswordMode) {
 
     if (key == '#') {
 
-      verifyPIN();
+      if (waitingOldPassword) {
+        verifyOldPassword();
+      }
+      else if (waitingNewPassword) {
+        saveNewPassword();
+      }
     }
     else if (key == '*') {
 
-      resetPasswordInput();
+      passwordInput = "";
+      printLine2("");
     }
-    else {
+    else if (key >= '0' && key <= '9') {
 
       appendChar(key);
     }
+
+    return;
   }
+
+  if (key == '#') {
+
+    verifyPIN();
+  }
+  else if (key == '*') {
+
+    resetPasswordInput();
+  }
+  else if (key >= '0' && key <= '9') {
+
+    appendChar(key);
+  }
+}
 
   unsigned long now = millis();
   bool pinState = (digitalRead(10) == HIGH);
