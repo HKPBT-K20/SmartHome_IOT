@@ -167,6 +167,11 @@ void setup() {
   doorLcd.backlight();
   printLine1("Door Ready");
   printLine2("");
+
+  doorLcd.init();
+  doorLcd.backlight();
+  printLine1("Door Ready");
+  printLine2("");
 }
 
 void loop() {
