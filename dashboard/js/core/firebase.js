@@ -8,7 +8,7 @@ import {
     remove
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-import { FIREBASE_CONFIG, MOCK_ACCOUNT as ENV_MOCK_ACCOUNT, MOCK_PASSWORD_ALIASES as ENV_MOCK_PASSWORD_ALIASES } from "../env.js";
+import { FIREBASE_CONFIG, MOCK_ACCOUNT as ENV_MOCK_ACCOUNT, MOCK_PASSWORD_ALIASES as ENV_MOCK_PASSWORD_ALIASES } from "../../env.js";
 
 export const firebaseConfig = FIREBASE_CONFIG;
 
