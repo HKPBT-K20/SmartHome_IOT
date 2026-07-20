@@ -12,9 +12,28 @@ import { FIREBASE_CONFIG, MOCK_ACCOUNT as ENV_MOCK_ACCOUNT, MOCK_PASSWORD_ALIASE
 
 export const firebaseConfig = FIREBASE_CONFIG;
 
-export const app = initializeApp(firebaseConfig);
-export const db = getDatabase(app);
-export const USE_MOCK_DEMO = Object.values(firebaseConfig).some(value => typeof value === "string" && value.includes("YOUR_"));
+function hasPlaceholderConfig(config) {
+    return Object.values(config || {}).some(value => typeof value === "string" && value.includes("YOUR_"));
+}
+
+let app = null;
+let db = null;
+let initError = null;
+
+export let USE_MOCK_DEMO = hasPlaceholderConfig(firebaseConfig);
+
+try {
+    if (!USE_MOCK_DEMO) {
+        app = initializeApp(firebaseConfig);
+        db = getDatabase(app);
+    }
+} catch (error) {
+    initError = error;
+    USE_MOCK_DEMO = true;
+    console.warn("Firebase init failed, falling back to mock mode.", error);
+}
+
+export { app, db };
 
 export { ref, onValue, set, update, remove };
 
@@ -92,4 +111,8 @@ export function setMockAccessLogs(logs) {
 
 export function clearMockAccessLogs() {
     localStorage.removeItem(MOCK_ACCESS_LOGS_KEY);
+}
+
+export function getFirebaseInitError() {
+    return initError;
 }
