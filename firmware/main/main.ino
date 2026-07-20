@@ -17,7 +17,6 @@ void setup() {
   Serial.println("=== Smart Home Booting ===");
 
   setupSensors();
-  setupRTC();
   setupDisplay();
   setupActuator();
   setupSecurity();
@@ -38,7 +37,6 @@ void loop() {
 
   updateTime();
   checkRFID();
-  checkKeypad();
   checkPIR(currentHour);
   updateDoor();
   updateBuzzer();

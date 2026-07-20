@@ -1,6 +1,5 @@
 // Bảo: WiFi, Firebase Realtime Database
 #include <WiFi.h>
-#include <RTClib.h>
 #include <FirebaseESP32.h>
 #include <vector>
 #include <algorithm>
@@ -61,15 +60,6 @@ static bool getCurrentMinutesOfDay(int &minutesOfDay) {
     minutesOfDay = t.tm_hour * 60 + t.tm_min;
     return true;
   }
-
-#ifdef RTC_ENABLED
-  extern RTC_DS1307 rtc;
-  DateTime now = rtc.now();
-  if (now.year() >= 2024) {
-    minutesOfDay = now.hour() * 60 + now.minute();
-    return true;
-  }
-#endif
 
   minutesOfDay = (millis() / 60000UL) % 1440;
   return false;
@@ -217,10 +207,32 @@ void setupFirebase() {
 
   } else {
     // Fallback 1: compile-time — đủ dùng cho dev/test, đúng trong vài phút sau Upload
-    // DateTime(__DATE__,__TIME__) parse local time (GMT+7) → trừ 7h ra UTC cho settimeofday()
     Serial.println("NTP unavailable — using compile-time fallback (DEV ONLY)");
-    DateTime compileTime(F(__DATE__), F(__TIME__));
-    time_t utc = (time_t)compileTime.unixtime() - 7UL * 3600UL; // GMT+7 local → UTC
+    
+    int year = 0, day = 0, hour = 0, min = 0, sec = 0;
+    char monthName[4] = {0};
+    const char monthNames[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
+    sscanf(__DATE__, "%s %d %d", monthName, &day, &year);
+    sscanf(__TIME__, "%d:%d:%d", &hour, &min, &sec);
+
+    int month = 0;
+    for (int i = 0; i < 12; i++) {
+      if (strncmp(&monthNames[i * 3], monthName, 3) == 0) {
+        month = i;
+        break;
+      }
+    }
+
+    struct tm compileTm;
+    compileTm.tm_year = year - 1900;
+    compileTm.tm_mon = month;
+    compileTm.tm_mday = day;
+    compileTm.tm_hour = hour;
+    compileTm.tm_min = min;
+    compileTm.tm_sec = sec;
+    compileTm.tm_isdst = -1;
+
+    time_t utc = mktime(&compileTm) - 7UL * 3600UL; // GMT+7 local → UTC
     struct timeval tv = { utc, 0 };
     settimeofday(&tv, nullptr);
 
@@ -229,20 +241,6 @@ void setupFirebase() {
     Serial.printf("Compile-time set: %04d-%02d-%02d %02d:%02d:%02d (GMT+7)\n",
       t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
       t.tm_hour, t.tm_min, t.tm_sec);
-
-#ifdef RTC_ENABLED
-    // Fallback 2 (production): validate và dùng RTC nếu compile-time quá cũ
-    extern RTC_DS1307 rtc;
-    DateTime rtcNow = rtc.now();
-    if (rtcNow.year() >= 2024 && rtcNow.year() <= 2099) {
-      time_t rtcUtc = (time_t)rtcNow.unixtime() - 7UL * 3600UL;
-      struct timeval tvRtc = { rtcUtc, 0 };
-      settimeofday(&tvRtc, nullptr);
-      Serial.printf("RTC override: %04d-%02d-%02d %02d:%02d:%02d\n",
-        rtcNow.year(), rtcNow.month(), rtcNow.day(),
-        rtcNow.hour(), rtcNow.minute(), rtcNow.second());
-    }
-#endif
   }
 
 
