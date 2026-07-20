@@ -52,7 +52,7 @@ void loop() {
   }
 
 
-  if (now - lastSensorPush >= 30000) {
+  if (now - lastSensorPush >= 15000) {
     pushSensors();
     syncAuthorizedCards();
     lastSensorPush = now;
