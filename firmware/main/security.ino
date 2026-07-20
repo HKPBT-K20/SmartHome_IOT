@@ -154,51 +154,6 @@ void fillAccessLog(const char* authMethod, const char* identityType, const char*
   newLogAvailable = true;
 }
 
-
-
-
-  if (key == '#') {
-    bool granted = (inputPIN == correctPIN);
-
-    if (!granted) {
-      wrongAttempts++;
-      Serial.println("Wrong PIN (" + String(wrongAttempts) + "/3)");
-      if (wrongAttempts >= 3) {
-        isLocked    = true;
-        lockedUntil = millis() + 30000;
-        Serial.println("Too many attempts — locked 30s");
-
-        fillAccessLog("KEYPAD", "PIN", inputPIN.c_str(), false);
-
-        alertBuzzer();
-        inputPIN = "";
-        return;
-      }
-    }
-
-    fillAccessLog("KEYPAD", "PIN", inputPIN.c_str(), granted);
-
-    Serial.println("PIN: " + inputPIN + " → " + (granted ? "GRANTED" : "DENIED"));
-
-    if (granted) { wrongAttempts = 0; openDoor(); }
-    else         alertBuzzer();
-
-    inputPIN = "";
-  }
-  else if (key == '*') {
-    inputPIN = "";
-    Serial.println("PIN cleared");
-  }
-  else {
-    if (inputPIN.length() < 6) {
-      inputPIN += key;
-      Serial.println("Input: " + String(inputPIN.length()) + "/6 digits");
-    } else {
-      Serial.println("Max 6 digits — press # to confirm or * to clear");
-    }
-  }
-}
-
 void checkPIR(int currentHour) {
   unsigned long now = millis();
 
@@ -264,15 +219,13 @@ void handleUnoCommunication() {
         }
 
         if (inputBuffer == "ACCESS_GRANTED") {
-
           Serial.println("[UNO] PIN verified");
-
+          fillAccessLog("KEYPAD", "PIN", "******", true);
           openDoor();
         }
         else if (inputBuffer == "ACCESS_DENIED") {
-
           Serial.println("[UNO] PIN denied");
-
+          fillAccessLog("KEYPAD", "PIN", "******", false);
           alertBuzzer();
         } else if (inputBuffer.startsWith("PIR:")) {
           if (inputBuffer.length() > 4) {

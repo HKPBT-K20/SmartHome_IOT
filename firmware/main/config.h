@@ -8,6 +8,5 @@
 #define SECURITY_PIN  "123456"
 #define RFID_UID      "4362F506"
 
-#define RTC_ENABLED   // DS1307 có pin nuôi — dùng làm NTP fallback cho SSL
 
 #endif // CONFIG_H
