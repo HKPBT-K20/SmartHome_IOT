@@ -40,9 +40,6 @@ static void handleIRKey(uint32_t rawValue) {
     setRelay(1, nextState);
     pushRelayState(1, nextState);
     Serial.printf("IR key 2 -> working room relay CH1 %s\n", nextState ? "ON" : "OFF");
-  } else {
-    Serial.print("IR raw unknown: 0x");
-    Serial.println(rawValue, HEX);
   }
 }
 
@@ -137,8 +134,15 @@ void updateIRRemote() {
   }
 
   uint32_t rawValue = irResults.value;
-  if (rawValue != 0) {
+  static uint32_t lastIrValue = 0;
+  static unsigned long lastIrEventAt = 0;
+  unsigned long now = millis();
+
+  // Chỉ xử lý khi mã khác mã trước đó hoặc đã qua đủ thời gian debounce.
+  if (rawValue != 0 && (rawValue != lastIrValue || now - lastIrEventAt >= 350)) {
     handleIRKey(rawValue);
+    lastIrValue = rawValue;
+    lastIrEventAt = now;
   }
 
   irrecv.resume();
