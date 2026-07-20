@@ -8,7 +8,7 @@ import {
     remove
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-import { FIREBASE_CONFIG } from "../../.env";
+import { FIREBASE_CONFIG, MOCK_ACCOUNT as ENV_MOCK_ACCOUNT, MOCK_PASSWORD_ALIASES as ENV_MOCK_PASSWORD_ALIASES } from "../env.js";
 
 export const firebaseConfig = FIREBASE_CONFIG;
 
@@ -17,8 +17,6 @@ export const db = getDatabase(app);
 export const USE_MOCK_DEMO = Object.values(firebaseConfig).some(value => typeof value === "string" && value.includes("YOUR_"));
 
 export { ref, onValue, set, update, remove };
-
-import { MOCK_ACCOUNT as ENV_MOCK_ACCOUNT, MOCK_PASSWORD_ALIASES as ENV_MOCK_PASSWORD_ALIASES } from "../../.env";
 
 export const MOCK_ACCOUNT = ENV_MOCK_ACCOUNT;
 
