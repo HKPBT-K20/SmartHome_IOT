@@ -29,6 +29,7 @@ struct RelayScheduleConfig {
 };
 
 // Shared function prototypes
+
 void openDoor();
 void closeDoor();
 void alertBuzzer(int beeps = 3);
