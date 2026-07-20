@@ -42,5 +42,6 @@ bool readDHTTemperature(float &tempVal);
 void getTimeString(char *buffer);
 void pushSecurityMotion(bool detected);
 void pushSecurityAlarm(bool active);
+void updateIRRemote();
 
 #endif // TYPES_H

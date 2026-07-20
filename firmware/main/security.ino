@@ -39,6 +39,8 @@ bool currentPIRState = false;
 unsigned long lastUnoMessageTime = 0;
 bool unoOnline = true;
 
+void pushRelayState(int ch, bool on);
+
 void setupSecurity() {
   SPI.begin(18, 23, 19, SS_PIN);
   rfid.PCD_Init();

@@ -1,6 +1,9 @@
 #include <Wire.h>
 #include <RTClib.h>
 #include <DHT.h>
+#include <IRremoteESP8266.h>
+#include <IRrecv.h>
+#include <IRutils.h>
 #include "types.h"
 
 // =====================================================
@@ -9,16 +12,46 @@
 
 #define DHT_PIN  27
 #define DHT_TYPE  DHT11
+#define IR_REMOTE_PIN 13
 
 RTC_DS1307 rtc;
 DHT dht(DHT_PIN, DHT_TYPE);
+IRrecv irrecv(IR_REMOTE_PIN);
+decode_results irResults;
 
 int currentHour = 0;
 int currentLightLevel = 500;
 
+// Một số remote NEC phổ biến: nút 1 và 2.
+// Nếu remote của bạn khác mã, xem Serial để lấy raw code rồi đổi ở đây.
+static const uint32_t IR_KEY_1_RAW = 0x00FF30CF;
+static const uint32_t IR_KEY_2_RAW = 0x00FF18E7;
+
+static void handleIRKey(uint32_t rawValue) {
+  extern void setRelay(int ch, bool on);
+  extern void pushRelayState(int ch, bool on);
+  extern bool relayState[4];
+
+  if (rawValue == IR_KEY_1_RAW) {
+    bool nextState = !relayState[3];
+    setRelay(3, nextState);
+    pushRelayState(3, nextState);
+    Serial.printf("IR key 1 -> living room relay CH3 %s\n", nextState ? "ON" : "OFF");
+  } else if (rawValue == IR_KEY_2_RAW) {
+    bool nextState = !relayState[1];
+    setRelay(1, nextState);
+    pushRelayState(1, nextState);
+    Serial.printf("IR key 2 -> working room relay CH1 %s\n", nextState ? "ON" : "OFF");
+  } else {
+    Serial.print("IR raw unknown: 0x");
+    Serial.println(rawValue, HEX);
+  }
+}
+
 void setupSensors() {
   analogReadResolution(12);
   dht.begin();
+  irrecv.enableIRIn();
   Serial.println("Sensor module ready.");
 }
 
@@ -114,4 +147,17 @@ int readAirQualityPPM() {
   if (ppm < 350.0f) ppm = 350.0f;
   if (ppm > 2000.0f) ppm = 2000.0f;
   return (int)ppm;
+}
+
+void updateIRRemote() {
+  if (!irrecv.decode(&irResults)) {
+    return;
+  }
+
+  uint32_t rawValue = irResults.value;
+  if (rawValue != 0) {
+    handleIRKey(rawValue);
+  }
+
+  irrecv.resume();
 }
