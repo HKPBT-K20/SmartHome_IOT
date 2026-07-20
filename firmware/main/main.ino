@@ -4,6 +4,7 @@ extern int  currentHour;
 extern bool newLogAvailable;
 
 extern void handleUnoCommunication();
+extern void updateIRRemote();
 
 static unsigned long lastSensorPush   = 0;
 static unsigned long lastAirPush      = 0;
@@ -32,6 +33,7 @@ void loop() {
   unsigned long now = millis();
 
   handleUnoCommunication();
+  updateIRRemote();
 
   updateTime();
   checkRFID();
