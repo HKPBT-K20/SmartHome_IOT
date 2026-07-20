@@ -261,6 +261,8 @@ void setupFirebase() {
   pushRelayState(3, relayState[3]);
   pushSecurityMotion(false);
   pushSecurityAlarm(false);
+  pushLocalCards();
+  syncAuthorizedCards();
   Serial.println("Firebase ready");
 }
 
@@ -472,6 +474,21 @@ String getCardStatus(String uid) {
   return "none";
 }
 
+void pushLocalCards() {
+  if (!firebaseReady || !Firebase.ready()) return;
+
+  extern String validUIDs[];
+  extern int uidCount;
+  for (int i = 0; i < uidCount; i++) {
+    String path = "/local_cards/" + validUIDs[i];
+    FirebaseJson json;
+    json.set("label", "Thẻ mặc định");
+    json.set("source", "firmware");
+    Firebase.setJSON(fbdo, path, json);
+  }
+  Serial.println("[Local] Pushed " + String(uidCount) + " local UIDs to Firebase");
+}
+
 void syncAuthorizedCards() {
   if (!firebaseReady || !Firebase.ready()) return;
 
@@ -491,18 +508,32 @@ void syncAuthorizedCards() {
   size_t count = json.iteratorBegin();
 
   std::vector<String> fetched;
+  int skipped = 0;
   for (size_t i = 0; i < count && (int)fetched.size() < 20; i++) {
     String key, value;
     int type = 0;
     json.iteratorGet(i, type, key, value);
     if (key.length() > 0) {
-      fetched.push_back(key);
+      FirebaseJson childJson;
+      childJson.setJsonData(value);
+      FirebaseJsonData lockedData, deletedData;
+      childJson.get(lockedData, "locked");
+      childJson.get(deletedData, "deleted");
+
+      bool isLocked = lockedData.success && lockedData.boolValue;
+      bool isDeleted = deletedData.success && deletedData.boolValue;
+
+      if (isLocked || isDeleted) {
+        skipped++;
+      } else {
+        fetched.push_back(key);
+      }
     }
   }
   json.iteratorEnd();
 
   authorizedUIDs = fetched;
-  Serial.println("[Sync] " + String(authorizedUIDs.size()) + " authorized UIDs loaded from Firebase");
+  Serial.println("[Sync] " + String(authorizedUIDs.size()) + " authorized UIDs loaded (" + String(skipped) + " skipped — locked/deleted)");
 }
 
 void checkRevokedCards() {
