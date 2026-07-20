@@ -764,7 +764,18 @@
         </div>
     </div>
 
-    <script type="module" src="js/app.js"></script>
+    <script type="module">
+        try {
+            const response = await fetch("/api/config", { cache: "no-store" });
+            if (response.ok) {
+                window.__SMARTHOME_ENV__ = await response.json();
+            }
+        } catch (error) {
+            console.warn("Runtime config unavailable, using local defaults.", error);
+        }
+
+        await import("./js/app.js");
+    </script>
 </body>
 
 </html>
