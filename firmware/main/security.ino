@@ -39,6 +39,8 @@ bool currentPIRState = false;
 unsigned long lastUnoMessageTime = 0;
 bool unoOnline = true;
 
+void pushRelayState(int ch, bool on);
+
 void setupSecurity() {
   SPI.begin(18, 23, 19, SS_PIN);
   rfid.PCD_Init();
@@ -141,15 +143,24 @@ void fillAccessLog(const char* authMethod, const char* identityType, const char*
   strncpy(lastLog.identityType,  identityType,  sizeof(lastLog.identityType) - 1);
   strncpy(lastLog.identityValue, identityValue, sizeof(lastLog.identityValue) - 1);
 
-  if (granted) {
+  if (strcmp(authMethod, "RFID") == 0) {
+    String uid = String(identityValue);
+    String cardLabel = getAuthorizedCardLabel(uid);
+    if (cardLabel.length() == 0) {
+      cardLabel = "Thẻ " + uid.substring(max(0, (int)uid.length() - 4));
+    }
+
+    strncpy(lastLog.actorId, uid.c_str(), sizeof(lastLog.actorId) - 1);
+    strncpy(lastLog.actorName, cardLabel.c_str(), sizeof(lastLog.actorName) - 1);
+  } else if (granted) {
     strcpy(lastLog.actorId, "user_001");
-    strcpy(lastLog.actorName, "Vo Nguyen Thien Phu");
-    strcpy(lastLog.result, "Success");
+    strcpy(lastLog.actorName, "User");
   } else {
     strcpy(lastLog.actorId, "unknown");
     strcpy(lastLog.actorName, "Unknown User");
-    strcpy(lastLog.result, "Failed");
   }
+
+  strcpy(lastLog.result, granted ? "Success" : "Failed");
   lastLog.granted = granted;
   newLogAvailable = true;
 }

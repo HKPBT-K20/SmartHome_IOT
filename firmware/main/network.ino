@@ -19,6 +19,7 @@ extern bool      newLogAvailable;
 extern bool      relayState[4];
 extern char      securityMode[16];
 extern std::vector<String> authorizedUIDs;
+static std::vector<String> authorizedCardLabels;
 void pushRelayState(int ch, bool on);
 
 static RelayScheduleConfig relaySchedules[4] = {
@@ -487,6 +488,15 @@ void pushLocalCards() {
   Serial.println("[Local] Pushed " + String(uidCount) + " local UIDs to Firebase");
 }
 
+String getAuthorizedCardLabel(const String &uid) {
+  for (size_t i = 0; i < authorizedUIDs.size() && i < authorizedCardLabels.size(); i++) {
+    if (authorizedUIDs[i] == uid) {
+      return authorizedCardLabels[i];
+    }
+  }
+  return "";
+}
+
 void syncAuthorizedCards() {
   if (!firebaseReady || !Firebase.ready()) return;
 
@@ -497,6 +507,7 @@ void syncAuthorizedCards() {
       Serial.println("[Sync] authorized_cards error: " + reason);
     }
     authorizedUIDs.clear();
+    authorizedCardLabels.clear();
     return;
   }
 
@@ -506,6 +517,7 @@ void syncAuthorizedCards() {
   size_t count = json.iteratorBegin();
 
   std::vector<String> fetched;
+  std::vector<String> fetchedLabels;
   int skipped = 0;
   for (size_t i = 0; i < count && (int)fetched.size() < 20; i++) {
     String key, value;
@@ -514,9 +526,10 @@ void syncAuthorizedCards() {
     if (key.length() > 0) {
       FirebaseJson childJson;
       childJson.setJsonData(value);
-      FirebaseJsonData lockedData, deletedData;
+      FirebaseJsonData lockedData, deletedData, labelData;
       childJson.get(lockedData, "locked");
       childJson.get(deletedData, "deleted");
+      childJson.get(labelData, "label");
 
       bool isLocked = lockedData.success && lockedData.boolValue;
       bool isDeleted = deletedData.success && deletedData.boolValue;
@@ -525,12 +538,19 @@ void syncAuthorizedCards() {
         skipped++;
       } else {
         fetched.push_back(key);
+        String label = labelData.success ? labelData.stringValue : "";
+        label.trim();
+        if (label.length() == 0) {
+          label = "Thẻ " + key.substring(max(0, (int)key.length() - 4));
+        }
+        fetchedLabels.push_back(label);
       }
     }
   }
   json.iteratorEnd();
 
   authorizedUIDs = fetched;
+  authorizedCardLabels = fetchedLabels;
   Serial.println("[Sync] " + String(authorizedUIDs.size()) + " authorized UIDs loaded (" + String(skipped) + " skipped — locked/deleted)");
 }
 
@@ -566,7 +586,11 @@ void checkRevokedCards() {
     // Xóa khỏi authorizedUIDs vector ngay lập tức
     auto it = std::find(authorizedUIDs.begin(), authorizedUIDs.end(), uid);
     if (it != authorizedUIDs.end()) {
+      size_t index = (size_t)std::distance(authorizedUIDs.begin(), it);
       authorizedUIDs.erase(it);
+      if (index < authorizedCardLabels.size()) {
+        authorizedCardLabels.erase(authorizedCardLabels.begin() + index);
+      }
       Serial.println("[Revoke] Removed " + uid + " from authorized list — access denied immediately");
     }
     // Xóa node /revoked_cards/{uid} sau khi đã xử lý
