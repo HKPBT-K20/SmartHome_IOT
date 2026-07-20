@@ -54,6 +54,7 @@ void loop() {
 
   if (now - lastSensorPush >= 30000) {
     pushSensors();
+    syncAuthorizedCards();
     lastSensorPush = now;
   }
 
@@ -62,6 +63,7 @@ void loop() {
   // ── Poll lệnh relay từ Firebase mỗi 5 giây ──────────────────
   if (now - lastCmdPoll >= 5000) {
     listenCommands();
+    checkRevokedCards();   // Revoke ngay lập tức, không đợi sync 30s
     lastCmdPoll = now;
   }
 

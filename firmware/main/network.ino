@@ -2,6 +2,8 @@
 #include <WiFi.h>
 #include <RTClib.h>
 #include <FirebaseESP32.h>
+#include <vector>
+#include <algorithm>
 #include "config.h"
 #include "types.h"
 
@@ -17,6 +19,7 @@ extern AccessLog lastLog;
 extern bool      newLogAvailable;
 extern bool      relayState[4];
 extern char      securityMode[16];
+extern std::vector<String> authorizedUIDs;
 void pushRelayState(int ch, bool on);
 
 static RelayScheduleConfig relaySchedules[4] = {
@@ -417,5 +420,128 @@ void pushRelayState(int ch, bool on) {
 void pushSecurityAlarm(bool active) {
   if (!firebaseReady || !Firebase.ready()) return;
   Firebase.setBool(fbdo, "/security/alarm_status", active);
+}
+
+// ── RFID SELF-REGISTRATION ────────────────────────────────────
+
+void pushPendingCard(String uid) {
+  if (!firebaseReady || !Firebase.ready()) return;
+
+  struct tm t;
+  char displayTime[32] = "Unknown time";
+  if (getLocalTime(&t) && t.tm_year > 120) {
+    snprintf(displayTime, sizeof(displayTime), "%02d/%02d/%04d %02d:%02d:%02d",
+             t.tm_mday, t.tm_mon + 1, t.tm_year + 1900,
+             t.tm_hour, t.tm_min, t.tm_sec);
+  }
+
+  FirebaseJson json;
+  json.set("status", "pending");
+  json.set("timestamp", (int)(millis()));
+  json.set("display_time", displayTime);
+  json.set("reject_rescan", false);
+
+  String path = "/pending_cards/" + uid;
+  if (Firebase.setJSON(fbdo, path, json)) {
+    Serial.println("[RFID] Pushed pending card: " + uid);
+  } else {
+    Serial.println("[RFID] Push pending error: " + fbdo.errorReason());
+  }
+}
+
+void pushRejectedRescan(String uid) {
+  if (!firebaseReady || !Firebase.ready()) return;
+
+  String path = "/pending_cards/" + uid + "/reject_rescan";
+  if (Firebase.setBool(fbdo, path, true)) {
+    Serial.println("[RFID] Flagged reject_rescan for: " + uid);
+  } else {
+    Serial.println("[RFID] Reject rescan flag error: " + fbdo.errorReason());
+  }
+}
+
+String getCardStatus(String uid) {
+  if (!firebaseReady || !Firebase.ready()) return "none";
+
+  String path = "/pending_cards/" + uid + "/status";
+  if (Firebase.getString(fbdo, path)) {
+    String status = fbdo.stringData();
+    status.trim();
+    return status;
+  }
+  return "none";
+}
+
+void syncAuthorizedCards() {
+  if (!firebaseReady || !Firebase.ready()) return;
+
+  if (!Firebase.getJSON(fbdo, "/authorized_cards")) {
+    // Node chưa tồn tại = chưa có thẻ nào được duyệt — không phải lỗi thật
+    const String& reason = fbdo.errorReason();
+    if (reason.indexOf("not exist") < 0 && reason.indexOf("path not found") < 0) {
+      Serial.println("[Sync] authorized_cards error: " + reason);
+    }
+    authorizedUIDs.clear();
+    return;
+  }
+
+  // Collect keys trước khi gọi bất kỳ Firebase operation nào khác
+  // (mỗi Firebase call overwrite fbdo.jsonObject())
+  FirebaseJson& json = fbdo.jsonObject();
+  size_t count = json.iteratorBegin();
+
+  std::vector<String> fetched;
+  for (size_t i = 0; i < count && (int)fetched.size() < 20; i++) {
+    String key, value;
+    int type = 0;
+    json.iteratorGet(i, type, key, value);
+    if (key.length() > 0) {
+      fetched.push_back(key);
+    }
+  }
+  json.iteratorEnd();
+
+  authorizedUIDs = fetched;
+  Serial.println("[Sync] " + String(authorizedUIDs.size()) + " authorized UIDs loaded from Firebase");
+}
+
+void checkRevokedCards() {
+  if (!firebaseReady || !Firebase.ready()) return;
+  // Fast-path: nếu không có gì trong vector thì bỏ qua luôn
+  // Vẫn phải check Firebase vì có thể card được add xong bị revoke trước lần sync đầu tiên
+
+  if (!Firebase.getJSON(fbdo, "/revoked_cards")) {
+    // Node không tồn tại = không có revocation nào đang pending
+    return;
+  }
+
+  FirebaseJson& json = fbdo.jsonObject();
+  size_t count = json.iteratorBegin();
+
+  // Collect tất cả UID bị thu hồi trước khi gọi deleteNode
+  // (deleteNode sẽ overwrite fbdo)
+  std::vector<String> toRevoke;
+  for (size_t i = 0; i < count; i++) {
+    String key, value;
+    int type = 0;
+    json.iteratorGet(i, type, key, value);
+    if (key.length() > 0) {
+      toRevoke.push_back(key);
+    }
+  }
+  json.iteratorEnd();
+
+  if (toRevoke.empty()) return;
+
+  for (const String& uid : toRevoke) {
+    // Xóa khỏi authorizedUIDs vector ngay lập tức
+    auto it = std::find(authorizedUIDs.begin(), authorizedUIDs.end(), uid);
+    if (it != authorizedUIDs.end()) {
+      authorizedUIDs.erase(it);
+      Serial.println("[Revoke] Removed " + uid + " from authorized list — access denied immediately");
+    }
+    // Xóa node /revoked_cards/{uid} sau khi đã xử lý
+    Firebase.deleteNode(fbdo, "/revoked_cards/" + uid);
+  }
 }
 

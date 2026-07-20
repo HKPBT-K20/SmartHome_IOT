@@ -409,6 +409,13 @@
                         class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-2xl transition">
                         <i class="fa-solid fa-key"></i> Nhật ký ra vào
                     </button>
+                    <button data-target="page-rfid"
+                        class="nav-btn w-full flex items-center justify-between gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-2xl transition">
+                        <span class="flex items-center gap-3">
+                            <i class="fa-solid fa-id-card"></i> Thẻ RFID
+                        </span>
+                        <span id="rfid-nav-badge" class="hidden min-w-[20px] h-5 px-1.5 rounded-full bg-amber-400 text-slate-900 text-[11px] font-bold flex items-center justify-center">0</span>
+                    </button>
                 </nav>
             </div>
             <div class="p-5 border-t border-slate-800 text-sm text-slate-500">
@@ -734,12 +741,75 @@
                         </div>
                     </div>
                 </div>
+
+                <div id="page-rfid" class="page-content space-y-6 hidden">
+                    <!-- Section: Thẻ đã cấp quyền -->
+                    <div class="panel-card p-4 md:p-6 rounded-[28px] border border-slate-700/60 shadow-[0_25px_60px_rgba(15,23,42,0.2)]">
+                        <div class="flex items-center justify-between gap-3 mb-4">
+                            <h3 class="text-lg font-semibold text-white">
+                                <i class="fa-solid fa-id-badge text-emerald-400 mr-2"></i>Thẻ đã được cấp quyền
+                            </h3>
+                            <span class="text-xs text-slate-500">Từ /authorized_cards</span>
+                        </div>
+                        <div id="authorized-cards-list" class="space-y-3">
+                            <div class="text-center py-8 text-slate-500 text-sm">
+                                <i class="fa-solid fa-id-card text-2xl mb-3 block opacity-40"></i>
+                                Đang tải...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section: Danh sách thẻ pending -->
+                    <div class="panel-card p-4 md:p-6 rounded-[28px] border border-slate-700/60 shadow-[0_25px_60px_rgba(15,23,42,0.2)]">
+                        <div class="flex items-center justify-between gap-3 mb-4">
+                            <h3 class="text-lg font-semibold text-white">
+                                <i class="fa-solid fa-satellite-dish text-amber-400 mr-2"></i>Lịch sử thẻ quẹt
+                            </h3>
+                            <span class="text-xs text-slate-500">Từ /pending_cards · Mới nhất ở dưới</span>
+                        </div>
+                        <div id="pending-cards-list" class="space-y-3">
+                            <div class="text-center py-8 text-slate-500 text-sm">
+                                <i class="fa-solid fa-satellite-dish text-2xl mb-3 block opacity-40"></i>
+                                Đang đồng bộ...
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <div id="toast-container"
         class="fixed top-4 right-4 z-50 flex w-[92vw] max-w-sm flex-col gap-3 pointer-events-none"></div>
+
+    <!-- Modal thêm nhãn khi duyệt thẻ RFID -->
+    <div id="modal-add-card"
+        class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-950/70 backdrop-blur-sm px-4">
+        <div class="w-full max-w-md rounded-[28px] border border-slate-700/70 bg-slate-950/95 p-6 shadow-2xl shadow-black/40">
+            <div class="flex items-start gap-3 mb-5">
+                <div class="mt-1 text-emerald-400 text-xl">
+                    <i class="fa-solid fa-id-card"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="text-lg font-semibold text-white">Duyệt thẻ RFID</h3>
+                    <p class="mt-1 text-sm text-slate-400">UID: <span id="modal-card-uid-display" class="font-mono text-sky-300 font-semibold">--</span></p>
+                </div>
+            </div>
+            <div class="mb-5">
+                <label class="block text-sm font-medium text-slate-300 mb-2">Nhãn thẻ (tên chủ sở hữu)</label>
+                <input id="modal-card-label-input" type="text" placeholder="Ví dụ: Thẻ của Phú"
+                    class="w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-400">
+            </div>
+            <div class="flex justify-end gap-3">
+                <button id="modal-add-card-cancel"
+                    class="px-4 py-2 rounded-2xl bg-slate-800 text-slate-200 hover:bg-slate-700 transition font-semibold">Huỷ</button>
+                <button id="modal-add-card-confirm"
+                    class="px-4 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition">
+                    <i class="fa-solid fa-check mr-1"></i>Xác nhận duyệt
+                </button>
+            </div>
+        </div>
+    </div>
 
     <div id="confirm-modal"
         class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-950/70 backdrop-blur-sm px-4">

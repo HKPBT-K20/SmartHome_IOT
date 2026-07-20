@@ -1,5 +1,6 @@
 #include <SPI.h>
 #include <MFRC522.h>
+#include <vector>
 #include "types.h"
 
 #define PIR_COOLDOWN_NIGHT 30000
@@ -12,6 +13,14 @@ bool motionDetected = false;
 unsigned long motionDetectedUntil = 0;
 void pushSecurityMotion(bool detected);
 void pushUnoOnlineStatus(bool online);
+
+// Dynamic authorized UIDs synced từ Firebase /authorized_cards/
+std::vector<String> authorizedUIDs;
+
+// Prototypes cho các hàm Firebase trong network.ino
+void pushPendingCard(String uid);
+void pushRejectedRescan(String uid);
+String getCardStatus(String uid);
 
 #define SS_PIN  5
 #define RST_PIN -1
@@ -76,21 +85,42 @@ void checkRFID() {
   }
   uid.toUpperCase();
 
+  // Kiểm tra hardcode UIDs trước (fallback cứng, không cần Firebase)
   bool granted = false;
   for (int i = 0; i < uidCount; i++) {
     if (uid == validUIDs[i]) { granted = true; break; }
   }
 
-  Serial.println("RFID: " + uid + " → " + (granted ? "GRANTED" : "DENIED"));
+  // Nếu chưa granted, kiểm tra dynamic UIDs từ Firebase
+  if (!granted) {
+    for (const String& authUid : authorizedUIDs) {
+      if (uid == authUid) { granted = true; break; }
+    }
+  }
 
-  fillAccessLog("RFID", "RFID", uid.c_str(), granted);
-
-  if (granted) openDoor();
-  else         alertBuzzer();
+  if (granted) {
+    Serial.println("[RFID] UID: " + uid + " -> GRANTED");
+    fillAccessLog("RFID", "RFID", uid.c_str(), true);
+    openDoor();
+  } else {
+    // Thẻ lạ — kiểm tra trạng thái trên Firebase
+    String cardStatus = getCardStatus(uid);
+    if (cardStatus == "rejected") {
+      Serial.println("[RFID] UID: " + uid + " -> REJECTED RESCAN (flagged on Firebase)");
+      pushRejectedRescan(uid);
+    } else if (cardStatus == "pending") {
+      Serial.println("[RFID] UID: " + uid + " -> PENDING (already waiting for approval)");
+    } else {
+      // Thẻ chưa từng xuất hiện
+      Serial.println("[RFID] UID: " + uid + " -> PENDING (pushed to Firebase)");
+      pushPendingCard(uid);
+    }
+    fillAccessLog("RFID", "RFID", uid.c_str(), false);
+    alertBuzzer(2);
+  }
 
   rfid.PICC_HaltA();
   rfid.PCD_StopCrypto1();
-
   lastRFIDTime = millis();
 }
 
