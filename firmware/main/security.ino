@@ -186,7 +186,7 @@ void checkPIR(int currentHour) {
     return;
   }
 
-  bool isNight = (currentHour >= 22 || currentHour < 6);
+  bool isNight = (currentHour >= 0) && (currentHour >= 22 || currentHour < 6);
   bool modeAllowsMotion = (strcmp(securityMode, "always") == 0) ||
                           (strcmp(securityMode, "night_only") == 0 && isNight);
   unsigned long cooldown = isNight ? PIR_COOLDOWN_NIGHT : PIR_COOLDOWN_DAY;
