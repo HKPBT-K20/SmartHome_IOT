@@ -19,6 +19,7 @@ decode_results irResults;
 
 int currentHour = 0;
 int currentLightLevel = 500;
+bool timeSynced = false;
 
 // Một số remote NEC phổ biến: nút 1 và 2.
 // Nếu remote của bạn khác mã, xem Serial để lấy raw code rồi đổi ở đây.
@@ -93,9 +94,10 @@ void updateTime() {
   struct tm t;
   if (getLocalTime(&t) && t.tm_year > 120) {
     currentHour = t.tm_hour;
+    timeSynced = true;
   } else {
-    unsigned long totalSeconds = millis() / 1000;
-    currentHour = (totalSeconds / 3600) % 24;
+    currentHour = -1;
+    timeSynced = false;
   }
 }
 

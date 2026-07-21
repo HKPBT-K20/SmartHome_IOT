@@ -127,6 +127,10 @@ void updateSmartLighting() {
   static bool autoLightOn = false;
   unsigned long now = millis();
 
+  if (currentHour < 0) {
+    return;
+  }
+
   if (currentPIRState) {
     lastMotionTime = now;
   }

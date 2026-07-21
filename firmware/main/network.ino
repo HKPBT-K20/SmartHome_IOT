@@ -1,4 +1,4 @@
-// Bảo: WiFi, Firebase Realtime Database
+// Báº£o: WiFi, Firebase Realtime Database
 #include <WiFi.h>
 #include <FirebaseESP32.h>
 #include <vector>
@@ -6,14 +6,14 @@
 #include "config.h"
 #include "types.h"
 
-// ── FIREBASE OBJECTS ──────────────────────────────────────────
+// â”€â”€ FIREBASE OBJECTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 FirebaseData   fbdo;
 FirebaseAuth   auth;
 FirebaseConfig fbConfig;
 
 static bool firebaseReady = false;
 
-// Các biến này được định nghĩa trong security.ino
+// CÃ¡c biáº¿n nÃ y Ä‘Æ°á»£c Ä‘á»‹nh nghÄ©a trong security.ino
 extern AccessLog lastLog;
 extern bool      newLogAvailable;
 extern bool      relayState[4];
@@ -62,7 +62,7 @@ static bool getCurrentMinutesOfDay(int &minutesOfDay) {
     return true;
   }
 
-  minutesOfDay = (millis() / 60000UL) % 1440;
+  minutesOfDay = -1;
   return false;
 }
 
@@ -104,6 +104,8 @@ static void syncSecurityMode() {
 
 static bool scheduleActivePeriod[4] = {false, false, false, false};
 static int  scheduleSkipDay[4] = {-1, -1, -1, -1};
+static bool lastTimeSyncStatus = false;
+static bool lastTimeSyncStatusInitialized = false;
 
 static int getCurrentDayOfYear() {
   struct tm t;
@@ -116,6 +118,7 @@ static int getCurrentDayOfYear() {
 static void syncScheduleChannel(int ch, int minutesOfDay) {
   if (!firebaseReady || !Firebase.ready()) return;
   if (ch != 1 && ch != 3) return;
+  if (!timeSynced) return;
 
   char path[40];
   bool enabled = false;
@@ -179,7 +182,33 @@ static void syncScheduleChannel(int ch, int minutesOfDay) {
   }
 }
 
-// ── SETUP ─────────────────────────────────────────────────────
+static void pauseScheduleRelaysDueToTimeLoss() {
+  for (int ch : {1, 3}) {
+    if (scheduleActivePeriod[ch]) {
+      setRelay(ch, false);
+      pushRelayState(ch, false);
+      scheduleActivePeriod[ch] = false;
+    }
+  }
+}
+
+static void pushTimeSyncStatus(bool synced) {
+  if (!firebaseReady || !Firebase.ready()) return;
+  if (lastTimeSyncStatusInitialized && lastTimeSyncStatus == synced) {
+    return;
+  }
+
+  lastTimeSyncStatus = synced;
+  lastTimeSyncStatusInitialized = true;
+
+  if (Firebase.setBool(fbdo, "/system/time_synced", synced)) {
+    Serial.println(String("[Time] Sync status pushed: ") + (synced ? "true" : "false"));
+  } else {
+    Serial.println("Time sync push error: " + fbdo.errorReason());
+  }
+}
+
+// â”€â”€ SETUP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 void setupFirebase() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASS);
@@ -188,7 +217,7 @@ void setupFirebase() {
   unsigned long start = millis();
   while (WiFi.status() != WL_CONNECTED) {
     if (millis() - start > 15000) {
-      Serial.println("\nWiFi timeout — check SSID/password in config.h");
+      Serial.println("\nWiFi timeout - check SSID/password in config.h");
       return;
     }
     delay(500);
@@ -196,58 +225,22 @@ void setupFirebase() {
   }
   Serial.println("\nWiFi connected: " + WiFi.localIP().toString());
 
-  // NTP là nguồn thời gian ưu tiên — SSL cần notBefore/notAfter hợp lệ
   configTime(7 * 3600, 0, "time.google.com", "pool.ntp.org");
   delay(2000);
 
   struct tm t;
-  if (getLocalTime(&t) && t.tm_year > 120) {
+  timeSynced = getLocalTime(&t) && t.tm_year > 120;
+  if (timeSynced) {
     Serial.printf("NTP synced: %04d-%02d-%02d %02d:%02d:%02d\n",
       t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
       t.tm_hour, t.tm_min, t.tm_sec);
-
   } else {
-    // Fallback 1: compile-time — đủ dùng cho dev/test, đúng trong vài phút sau Upload
-    Serial.println("NTP unavailable — using compile-time fallback (DEV ONLY)");
-    
-    int year = 0, day = 0, hour = 0, min = 0, sec = 0;
-    char monthName[4] = {0};
-    const char monthNames[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
-    sscanf(__DATE__, "%s %d %d", monthName, &day, &year);
-    sscanf(__TIME__, "%d:%d:%d", &hour, &min, &sec);
-
-    int month = 0;
-    for (int i = 0; i < 12; i++) {
-      if (strncmp(&monthNames[i * 3], monthName, 3) == 0) {
-        month = i;
-        break;
-      }
-    }
-
-    struct tm compileTm;
-    compileTm.tm_year = year - 1900;
-    compileTm.tm_mon = month;
-    compileTm.tm_mday = day;
-    compileTm.tm_hour = hour;
-    compileTm.tm_min = min;
-    compileTm.tm_sec = sec;
-    compileTm.tm_isdst = -1;
-
-    time_t utc = mktime(&compileTm) - 7UL * 3600UL; // GMT+7 local → UTC
-    struct timeval tv = { utc, 0 };
-    settimeofday(&tv, nullptr);
-
-    // Xác nhận lại
-    getLocalTime(&t);
-    Serial.printf("Compile-time set: %04d-%02d-%02d %02d:%02d:%02d (GMT+7)\n",
-      t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
-      t.tm_hour, t.tm_min, t.tm_sec);
+    Serial.println("NTP unavailable - schedules paused until time sync succeeds");
   }
-
 
   fbConfig.database_url               = FIREBASE_URL;
   fbConfig.signer.tokens.legacy_token = FIREBASE_KEY;
-  fbConfig.timeout.socketConnection   = 1500; // Giới hạn timeout 1.5s để tránh block loop khi SSL lỗi
+  fbConfig.timeout.socketConnection   = 1500;
 
   Serial.printf("[Debug] Free Heap before Firebase: %u bytes\n", ESP.getFreeHeap());
 
@@ -260,6 +253,7 @@ void setupFirebase() {
   pushRelayState(3, relayState[3]);
   pushSecurityMotion(false);
   pushSecurityAlarm(false);
+  pushTimeSyncStatus(timeSynced);
   pushLocalCards();
   syncAuthorizedCards();
   Serial.println("Firebase ready");
@@ -317,12 +311,12 @@ void pushSensors() {
   }
 }
 
-// ── PUSH ACCESS LOG ───────────────────────────────────────────
-// Gọi ngay khi newLogAvailable == true
+// â”€â”€ PUSH ACCESS LOG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Gá»i ngay khi newLogAvailable == true
 void pushAccessLog() {
   if (!newLogAvailable) return;
 
-  // Reset cờ trước để không gọi lại nếu Firebase lỗi
+  // Reset cá» trÆ°á»›c Ä‘á»ƒ khÃ´ng gá»i láº¡i náº¿u Firebase lá»—i
   newLogAvailable = false;
 
   if (!firebaseReady || !Firebase.ready()) return;
@@ -367,8 +361,8 @@ void pushUnoOnlineStatus(bool online) {
   }
 }
 
-// ── LISTEN COMMANDS ───────────────────────────────────────────
-// Gọi mỗi 5 giây — poll relay manual, security mode, và lịch tự động
+// â”€â”€ LISTEN COMMANDS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Gá»i má»—i 5 giÃ¢y â€” poll relay manual, security mode, vÃ  lá»‹ch tá»± Ä‘á»™ng
 void listenCommands() {
   if (!firebaseReady || !Firebase.ready()) return;
 
@@ -401,13 +395,24 @@ void listenCommands() {
   }
 
   int minutesOfDay = 0;
-  getCurrentMinutesOfDay(minutesOfDay);
-  syncScheduleChannel(1, minutesOfDay);
-  syncScheduleChannel(3, minutesOfDay);
+  bool syncedNow = getCurrentMinutesOfDay(minutesOfDay);
+  if (syncedNow != timeSynced) {
+    timeSynced = syncedNow;
+    pushTimeSyncStatus(timeSynced);
+    if (!timeSynced) {
+      pauseScheduleRelaysDueToTimeLoss();
+      Serial.println("Schedule paused: time is not synchronized.");
+    }
+  }
+
+  if (timeSynced) {
+    syncScheduleChannel(1, minutesOfDay);
+    syncScheduleChannel(3, minutesOfDay);
+  }
 }
 
-// ── PUSH RELAY STATE ─────────────────────────────────────────
-// Sync trạng thái relay lên /relay/ch1|ch2 để dashboard đọc được
+// â”€â”€ PUSH RELAY STATE' â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Sync tráº¡ng thÃ¡i relay lÃªn /relay/ch1|ch2 Ä‘á»ƒ dashboard Ä‘á»c Ä‘Æ°á»£c
 void pushRelayState(int ch, bool on) {
   if (!firebaseReady || !Firebase.ready()) return;
   if (ch == 1) {
@@ -417,13 +422,13 @@ void pushRelayState(int ch, bool on) {
   }
 }
 
-// ── PUSH SECURITY ALARM STATUS ───────────────────────────────
+// â”€â”€ PUSH SECURITY ALARM STATUS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 void pushSecurityAlarm(bool active) {
   if (!firebaseReady || !Firebase.ready()) return;
   Firebase.setBool(fbdo, "/security/alarm_status", active);
 }
 
-// ── RFID SELF-REGISTRATION ────────────────────────────────────
+// â”€â”€ RFID SELF-REGISTRATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 void pushPendingCard(String uid) {
   if (!firebaseReady || !Firebase.ready()) return;
@@ -481,7 +486,7 @@ void pushLocalCards() {
   for (int i = 0; i < uidCount; i++) {
     String path = "/local_cards/" + validUIDs[i];
     FirebaseJson json;
-    json.set("label", "Thẻ mặc định");
+    json.set("label", "Tháº» máº·c Ä‘á»‹nh");
     json.set("source", "firmware");
     Firebase.setJSON(fbdo, path, json);
   }
@@ -501,7 +506,7 @@ void syncAuthorizedCards() {
   if (!firebaseReady || !Firebase.ready()) return;
 
   if (!Firebase.getJSON(fbdo, "/authorized_cards")) {
-    // Node chưa tồn tại = chưa có thẻ nào được duyệt — không phải lỗi thật
+    // Node chÆ°a tá»“n táº¡i = chÆ°a cÃ³ tháº» nÃ o Ä‘Æ°á»£c duyá»‡t â€” khÃ´ng pháº£i lá»—i tháº­t
     const String& reason = fbdo.errorReason();
     if (reason.indexOf("not exist") < 0 && reason.indexOf("path not found") < 0) {
       Serial.println("[Sync] authorized_cards error: " + reason);
@@ -511,8 +516,8 @@ void syncAuthorizedCards() {
     return;
   }
 
-  // Collect keys trước khi gọi bất kỳ Firebase operation nào khác
-  // (mỗi Firebase call overwrite fbdo.jsonObject())
+  // Collect keys trÆ°á»›c khi gá»i báº¥t ká»³ Firebase operation nÃ o khÃ¡c
+  // (má»—i Firebase call overwrite fbdo.jsonObject())
   FirebaseJson& json = fbdo.jsonObject();
   size_t count = json.iteratorBegin();
 
@@ -541,7 +546,7 @@ void syncAuthorizedCards() {
         String label = labelData.success ? labelData.stringValue : "";
         label.trim();
         if (label.length() == 0) {
-          label = "Thẻ " + key.substring(max(0, (int)key.length() - 4));
+          label = "Tháº» " + key.substring(max(0, (int)key.length() - 4));
         }
         fetchedLabels.push_back(label);
       }
@@ -551,24 +556,24 @@ void syncAuthorizedCards() {
 
   authorizedUIDs = fetched;
   authorizedCardLabels = fetchedLabels;
-  Serial.println("[Sync] " + String(authorizedUIDs.size()) + " authorized UIDs loaded (" + String(skipped) + " skipped — locked/deleted)");
+  Serial.println("[Sync] " + String(authorizedUIDs.size()) + " authorized UIDs loaded (" + String(skipped) + " skipped â€” locked/deleted)");
 }
 
 void checkRevokedCards() {
   if (!firebaseReady || !Firebase.ready()) return;
-  // Fast-path: nếu không có gì trong vector thì bỏ qua luôn
-  // Vẫn phải check Firebase vì có thể card được add xong bị revoke trước lần sync đầu tiên
+  // Fast-path: náº¿u khÃ´ng cÃ³ gÃ¬ trong vector thÃ¬ bá» qua luÃ´n
+  // Váº«n pháº£i check Firebase vÃ¬ cÃ³ thá»ƒ card Ä‘Æ°á»£c add xong bá»‹ revoke trÆ°á»›c láº§n sync Ä‘áº§u tiÃªn
 
   if (!Firebase.getJSON(fbdo, "/revoked_cards")) {
-    // Node không tồn tại = không có revocation nào đang pending
+    // Node khÃ´ng tá»“n táº¡i = khÃ´ng cÃ³ revocation nÃ o Ä‘ang pending
     return;
   }
 
   FirebaseJson& json = fbdo.jsonObject();
   size_t count = json.iteratorBegin();
 
-  // Collect tất cả UID bị thu hồi trước khi gọi deleteNode
-  // (deleteNode sẽ overwrite fbdo)
+  // Collect táº¥t cáº£ UID bá»‹ thu há»“i trÆ°á»›c khi gá»i deleteNode
+  // (deleteNode sáº½ overwrite fbdo)
   std::vector<String> toRevoke;
   for (size_t i = 0; i < count; i++) {
     String key, value;
@@ -583,7 +588,7 @@ void checkRevokedCards() {
   if (toRevoke.empty()) return;
 
   for (const String& uid : toRevoke) {
-    // Xóa khỏi authorizedUIDs vector ngay lập tức
+    // XÃ³a khá»i authorizedUIDs vector ngay láº­p tá»©c
     auto it = std::find(authorizedUIDs.begin(), authorizedUIDs.end(), uid);
     if (it != authorizedUIDs.end()) {
       size_t index = (size_t)std::distance(authorizedUIDs.begin(), it);
@@ -591,9 +596,9 @@ void checkRevokedCards() {
       if (index < authorizedCardLabels.size()) {
         authorizedCardLabels.erase(authorizedCardLabels.begin() + index);
       }
-      Serial.println("[Revoke] Removed " + uid + " from authorized list — access denied immediately");
+      Serial.println("[Revoke] Removed " + uid + " from authorized list â€” access denied immediately");
     }
-    // Xóa node /revoked_cards/{uid} sau khi đã xử lý
+    // XÃ³a node /revoked_cards/{uid} sau khi Ä‘Ã£ xá»­ lÃ½
     Firebase.deleteNode(fbdo, "/revoked_cards/" + uid);
   }
 }
