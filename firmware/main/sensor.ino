@@ -12,6 +12,7 @@
 #define DHT_PIN  27
 #define DHT_TYPE  DHT11
 #define IR_REMOTE_PIN 13
+
 #define LIGHT_SENSOR_PIN 34
 DHT dht(DHT_PIN, DHT_TYPE);
 IRrecv irrecv(IR_REMOTE_PIN);
@@ -42,6 +43,34 @@ static void handleIRKey(uint32_t rawValue) {
     pushRelayState(1, nextState);
     Serial.printf("IR key 2 -> working room relay CH1 %s\n", nextState ? "ON" : "OFF");
   }
+}
+
+static const uint32_t IR_KEY_1_RAW = 0x00FF30CF;
+static const uint32_t IR_KEY_2_RAW = 0x00FF18E7;
+
+static void handleIRRemoteKey(uint32_t rawValue) {
+  extern bool relayState[4];
+  extern void setRelay(int ch, bool on);
+  extern void pushRelayState(int ch, bool on);
+
+  if (rawValue == IR_KEY_1_RAW) {
+    bool nextState = !relayState[3];
+    setRelay(3, nextState);
+    pushRelayState(3, nextState);
+    Serial.printf("IR key 1 -> living room relay CH3 %s\n", nextState ? "ON" : "OFF");
+    return;
+  }
+
+  if (rawValue == IR_KEY_2_RAW) {
+    bool nextState = !relayState[1];
+    setRelay(1, nextState);
+    pushRelayState(1, nextState);
+    Serial.printf("IR key 2 -> working room relay CH1 %s\n", nextState ? "ON" : "OFF");
+    return;
+  }
+
+  Serial.print("IR raw unknown: 0x");
+  Serial.println(rawValue, HEX);
 }
 
 void setupSensors() {
@@ -138,15 +167,8 @@ void updateIRRemote() {
   }
 
   uint32_t rawValue = irResults.value;
-  static uint32_t lastIrValue = 0;
-  static unsigned long lastIrEventAt = 0;
-  unsigned long now = millis();
-
-  // Chỉ xử lý khi mã khác mã trước đó hoặc đã qua đủ thời gian debounce.
-  if (rawValue != 0 && (rawValue != lastIrValue || now - lastIrEventAt >= 350)) {
-    handleIRKey(rawValue);
-    lastIrValue = rawValue;
-    lastIrEventAt = now;
+  if (rawValue != 0) {
+    handleIRRemoteKey(rawValue);
   }
 
   irrecv.resume();

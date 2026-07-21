@@ -1,262 +1,299 @@
-# 🏠 Smart Home Automation System
-> IoT Integration and Time-Based Control 
+# Smart Home IoT
 
----
+Hệ thống nhà thông minh gồm 3 phần chính:
 
-## 📋 Mô tả dự án
+- `firmware/`: code chạy trên ESP32
+- `dashboard/`: web dashboard quản lý và giám sát
+- `api/`: endpoint runtime để cấp cấu hình cho dashboard
 
-H? th?ng nh� th�ng minh s? d?ng **ESP32** l�m vi di?u khi?n trung t�m, x? l� d?ng th?i 3 nh�m t�c v?:
+Thiết kế hiện tại xoay quanh Firebase Realtime Database. ESP32 đẩy dữ liệu cảm biến, trạng thái an ninh, log truy cập và trạng thái relay lên Firebase; dashboard đọc trực tiếp dữ liệu đó để hiển thị và điều khiển.
 
-- **Time-Critical** — Hẹn giờ bật/tắt thiết bị dựa trên DS1307 RTC
-- **Event-Driven** — Kiểm soát vào/ra bằng RFID + Keypad, cảnh báo PIR
-- **Networking** — Đồng bộ Firebase, fetch API thời tiết, điều khiển từ xa qua web
+## Tổng quan
 
----
+Các nhóm chức năng chính:
 
-## 🗂️ Cấu trúc thư mục
+- Giám sát cảm biến: nhiệt độ, ánh sáng, độ ẩm, chất lượng không khí
+- Điều khiển relay từ xa qua dashboard
+- Lập lịch tự động cho relay theo khung giờ
+- Quản lý an ninh: RFID, keypad, PIR, còi báo động
+- Quản lý thẻ RFID: duyệt, từ chối, khôi phục, xoá vĩnh viễn
+- Ghi nhận nhật ký ra/vào
+- Hiển thị thời tiết
+- Chế độ mock/demo khi chưa cấu hình Firebase
 
-```
+## Cấu trúc dự án
+
+```text
 SmartHome_IOT/
-│
-├── firmware/                  # Code chạy trên ESP32 (Arduino IDE)
-│   ├── main/                  # Sketch chính — mở folder này bằng Arduino IDE
-│   │   ├── main.ino           # Loop chính, gọi các module
-│   │   ├── sensor.ino         # Khuyên: LM35, quang trở, DS1307
-│   │   ├── display.ino        # Khuyên: LCD hiển thị
-│   │   ├── security.ino       # Phú: RFID, Keypad, PIR
-│   │   ├── actuator.ino       # Phú: Servo, Relay, Còi
-│   │   ├── network.ino        # Bảo: WiFi, Firebase push/listen
-│   │   └── weather.ino        # Bảo: Fetch API thời tiết
-�   +-- config.h               # ? KH�NG push l�n Git (d� gitignore)
-│   ├── config.example.h       # Template cấu hình — copy thành config.h
-│   └── types.h                # Struct dùng chung cho cả nhóm
-│
-├── dashboard/                 # Web app — Huy
+├── api/
+│   └── config.js
+├── dashboard/
 │   ├── index.html
-│   ├── css/style.css
+│   ├── api/
+│   │   └── config.js
+│   ├── env.js
+│   ├── app.js
 │   └── js/
-│       ├── app.js             # Firebase init, realtime listener
-│       ├── relay.js           # Nút điều khiển relay
-│       └── accesslog.js       # Trang lịch sử vào/ra
-│
-├── docs/
-│   ├── SmartHome_PhanCong.docx
-�   +-- schematic.png          # So d? k?t n?i ch�n GPIO
-│   └── firebase_schema.md     # Schema Firebase
-│
-├── .gitignore
+│       ├── app.js
+│       ├── core/
+│       │   ├── firebase.js
+│       │   └── ui.js
+│       └── features/
+│           ├── auth.js
+│           ├── home.js
+│           ├── logs.js
+│           ├── rfid_manager.js
+│           ├── schedule.js
+│           ├── security.js
+│           └── weather.js
+├── firmware/
+│   ├── config.example.h
+│   ├── main/
+│   │   ├── actuator.ino
+│   │   ├── config.h
+│   │   ├── display.ino
+│   │   ├── main.ino
+│   │   ├── network.ino
+│   │   ├── security.ino
+│   │   ├── sensor.ino
+│   │   └── types.h
+│   ├── rtc_setup/
+│   └── uno_extension/
 └── README.md
 ```
 
----
+## Tính năng theo từng phần
 
-## ⚙️ Yêu cầu phần cứng
+### Firmware ESP32
 
-| Linh ki?n | Giao ti?p | Ch�n ESP32 | Ghi ch� |
-|---|---|---|---|
-| DS1307 RTC | I2C | GPIO 21 (SDA), 22 (SCL) | Chia bus với LCD |
-| LCD1602 I2C | I2C | GPIO 21 (SDA), 22 (SCL) | Địa chỉ 0x27 hoặc 0x3F |
-| RFID RC522 | SPI | SS=5, RST=27, SCK=18, MOSI=23, MISO=19 | SPI mặc định ESP32 |
-| Servo SG90 | PWM | **GPIO 26** | Mô phỏng khóa cửa (0°=mở, 90°=đóng) |
-| LM35 | ADC | GPIO 34 | Input only, 12-bit ADC |
-| Quang trở CDS | ADC | GPIO 35 | Chia áp điện trở 10K |
-| DHT11 | Digital | GPIO 26 | Độ ẩm không khí |
-| PIR HC-SR501 | Interrupt | GPIO 13 | RISING edge, debounce 500ms |
-| Relay 4 kênh | Digital | GPIO 32, 33, 18, 23 | LOW = bật, HIGH = tắt |
-| Keypad 4x4 Rows | Digital | GPIO 12, 15, 2, 0 | Cẩn thận GPIO 0 (boot) |
-| Keypad 4x4 Cols | Digital | **GPIO 4, 16, 17, 25** | Tránh GPIO 21/22 (I2C) |
-| Còi buzzer | Digital | **GPIO 14** | Tránh GPIO 4 (Keypad Row) |
-| IR Receiver 1838T | Digital | GPIO 36 | Fallback khi mất WiFi |
+`firmware/main/main.ino` là entry point. Khi chạy, firmware:
 
-> ⚠ GPIO 6–11: KHÔNG dùng (kết nối flash nội). GPIO 34–39: chỉ INPUT.
+- Khởi tạo cảm biến, hiển thị, cơ cấu chấp hành và module an ninh
+- Kết nối Wi-Fi và Firebase
+- Đồng bộ thời gian bằng NTP
+- Đọc và đẩy dữ liệu cảm biến lên Firebase theo chu kỳ
+- Lắng nghe lệnh relay, trạng thái báo động và lịch hẹn giờ
+- Xử lý RFID, PIR, keypad qua luồng xử lý an ninh
+- Ghi nhật ký truy cập ngay khi có sự kiện
 
----
+### Dashboard web
 
-## 🛠️ Cài đặt môi trường
+Dashboard là SPA JavaScript thuần, không có framework build riêng. Entry point là `dashboard/js/app.js`, được nạp từ `dashboard/index.html`.
 
-### 1. Arduino IDE 2.x
+Các module chính:
 
-Tải tại: https://www.arduino.cc/en/software
+- `auth.js`: đăng nhập mock/local
+- `home.js`: hiển thị cảm biến và điều khiển relay
+- `schedule.js`: cấu hình lịch bật/tắt relay
+- `security.js`: theo dõi PIR và trạng thái báo động
+- `logs.js`: xem và xoá nhật ký truy cập
+- `rfid_manager.js`: quản lý vòng đời thẻ RFID
+- `weather.js`: widget thời tiết
 
-Thêm board ESP32:
-- Mở **File → Preferences → Additional Boards Manager URLs**, thêm:
-```
-https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-```
-- Mở **Tools → Board → Boards Manager** → tìm `esp32` → Install
-- Chọn board: **Tools → Board → ESP32 Arduino → ESP32 Dev Module**
+Dashboard có 2 chế độ:
 
-### 2. Thư viện cần cài
+- Cấu hình thật: dùng Firebase Realtime Database
+- Mock/demo: tự bật khi cấu hình Firebase còn placeholder `YOUR_*`
 
-Vào **Sketch → Include Library → Manage Libraries**, cài các thư viện sau:
+### API runtime
 
-| Thư viện | Dùng cho | Tác giả |
-|---|---|---|
-| RTClib | DS1307 RTC | Adafruit |
-| LiquidCrystal I2C | LCD I2C | Frank de Brabander |
-| MFRC522 | RFID RC522 | miguelbalboa |
-| ESP32Servo | Servo SG90 | Kevin Harrington |
-| Keypad | Keypad 4x4 | Mark Stanley |
-| IRremoteESP8266 | Remote hồng ngoại | crankyoldgit |
-| Firebase ESP32 Client | Firebase | mobizt |
-| **ArduinoJson** | **Parse JSON thời tiết** | **Benoit Blanchon** |
-| **DHT sensor library** | **DHT11 độ ẩm không khí** | **Adafruit** |
-| MD_MAX72XX + MD_Parola | Matrix LED (nếu dùng) | MajicDesigns |
+`dashboard/index.html` sẽ gọi `GET /api/config` để lấy cấu hình runtime và gán vào `window.__SMARTHOME_ENV__`.
 
-### 3. Cấu hình dự án
+Hai file `api/config.js` và `dashboard/api/config.js` cùng trả về dữ liệu cấu hình theo biến môi trường, phù hợp cho môi trường deploy khác nhau.
 
-```bash
-# Copy file cấu hình mẫu
-cp firmware/config.example.h firmware/config.h
-```
+## Firebase Data Model
 
-Mở `firmware/config.h` và điền thông tin thật:
-
-```cpp
-#define WIFI_SSID     "tên_wifi_của_bạn"
-#define WIFI_PASS     "mật_khẩu_wifi"
-#define FIREBASE_URL  "https://your-project.firebaseio.com"
-#define FIREBASE_KEY  "your_api_key"
-#define WEATHER_KEY   "your_openweather_key"
-#define CITY_ID       "1580578"  // TP.HCM
-```
-
-> ? `config.h` d� du?c th�m v�o `.gitignore` � **kh�ng bao gi? push file n�y l�n Git**.
-
-### 4. Firebase setup
-
-- Tạo project tại https://firebase.google.com
-- Bật **Realtime Database**
-- Cấu trúc database:
-
-```
-/sensors/
-  temp        → float
-  light       → int
-/relay/
-  ch1, ch3    → bool
-/access_log/
-  {timestamp}/
-    uid       → string
-    method    → "RFID" | "KEYPAD"
-    time      → "HH:MM:SS DD/MM/YY"
-    granted   → bool
-/commands/
-  relay_1..4  → bool
-```
-
-### 5. OpenWeatherMap API
-
-- Đăng ký tại https://openweathermap.org
-- Lấy API key → điền vào `WEATHER_KEY` trong `config.h`
-- City ID mặc định TP.HCM: `1580578`
-
----
-
-## ?? Ph�n c�ng
-
-| Thành viên | Mảng phụ trách | File chính |
-|---|---|---|
-| Khuyên | Cảm biến & hiển thị | `sensor.ino`, `display.ino` |
-| Phú | Bảo mật & điều khiển vật lý | `security.ino`, `actuator.ino` |
-| Bảo | Networking & Cloud | `network.ino`, `weather.ino` |
-| Huy | Dashboard & tích hợp | `dashboard/` |
-
-### Git workflow
-
-```bash
-# Mỗi người làm trên branch riêng
-git checkout -b tv1/sensor
-
-# Commit thường xuyên
-git add sensor.ino
-git commit -m "tv1: add LM35 temperature reading"
-
-# Khi xong thì tạo Pull Request vào main
-git push origin tv1/sensor
-```
-
-> Không push thẳng vào `main`. Tạo Pull Request, ít nhất 1 người review trước khi merge.
-
----
-
-## 📐 Struct dữ liệu dùng chung
-
-Định nghĩa trong `types.h` — tất cả thành viên dùng chung, không tự ý sửa format:
-
-```cpp
-struct SensorData {
-  float temperature;   // Nhiệt độ (°C) từ LM35
-  int   lightLevel;    // Độ sáng từ quang trở (0–4095)
-  char  time[20];      // "HH:MM:SS DD/MM/YY"
-};
-
-struct AccessLog {
-  char uid[20];        // UID th? RFID ho?c m� PIN
-  char method[10];     // "RFID" hoặc "KEYPAD"
-  char time[20];       // "HH:MM:SS DD/MM/YY"
-  bool granted;        // true = mở cửa, false = từ chối
-};
-
-struct WeatherData {
-  float temperature;      // Nhiệt độ ngoài trời (°C) từ OpenWeatherMap
-  char  weatherDesc[32];  // Mô tả, ví dụ: "mưa nhẹ"
-};
-```
-
-> ⚠ Không tự ý thay đổi layout của struct — sẽ phá vỡ serialization Firebase và compatibility giữa các module.
-
----
-
-## 🔧 Lưu ý kỹ thuật
-
-**Không dùng `delay()`** — dùng `millis()` để tránh blocking:
-
-```cpp
-unsigned long lastSensor = 0, lastFirebase = 0, lastWeather = 0;
-
-void loop() {
-  unsigned long now = millis();
-  if (now - lastSensor   >= 5000)   { readSensors();    lastSensor   = now; }
-  if (now - lastFirebase >= 30000)  { pushToFirebase(); lastFirebase = now; }
-  if (now - lastWeather  >= 900000) { fetchWeather();   lastWeather  = now; }
-  checkRFID();    // không có delay bên trong
-  checkPIR();     // kiểm tra interrupt flag
-  checkKeypad();  // quét phím không blocking
-}
-```
-
-**Test trước khi ghép** — dùng Wokwi (https://wokwi.com) để mô phỏng ESP32 online, không cần phần cứng thật.
-
----
-
-## 📦 Công việc có thể làm ngay (chưa cần linh kiện)
-
-- Bảo: Tạo Firebase project, setup Realtime Database
-- Bảo: Đăng ký OpenWeatherMap API key
-- Huy: Dựng khung Web Dashboard
-- Khuyên, Phú: Code logic trên Wokwi
-
----
-
-## Cấu trúc source hiện tại
-
-Dashboard d� du?c t�ch r� theo l?p:
+Các node hiện dùng trong code:
 
 ```text
-dashboard/
-  index.html
-  js/
-    app.js
-    core/
-      firebase.js
-      ui.js
-    features/
-      auth.js
-      logs.js
-      schedule.js
-      security.js
-      weather.js
+/sensors/
+  temp
+  light
+  humidity
+  air
+  time
+
+/relay/
+  ch1
+  ch3
+
+/commands/
+  relay_1
+  relay_3
+
+/schedules/
+  ch1/
+    on_time
+    off_time
+    enabled
+    mode
+  ch3/
+    on_time
+    off_time
+    enabled
+    mode
+
+/security/
+  mode
+  motion_detected
+  alarm_status
+  uno_online
+  time_synced
+
+/access_logs/
+  {auto_id}/
+    created_at
+    display_time
+    auth_method
+    identity_type
+    identity_value
+    actor_id
+    actor_name
+    result
+    granted
+
+/pending_cards/
+  {uid}/
+    status
+    timestamp
+    display_time
+    reject_rescan
+
+/authorized_cards/
+  {uid}/
+    added_at
+    label
+    locked
+    deleted
+
+/revoked_cards/
+  {uid}/
+
+/local_cards/
+  {uid}/
+
+/system/
+  time_synced
 ```
 
-`dashboard/js/app.js` l� entry point m?ng, c�n to�n b? logic d� du?c chia theo t?ng module ch?c nang.
+## Chạy dự án
+
+### 1. Dashboard
+
+Dashboard không có bước build. Chỉ cần mở bằng web server tĩnh hoặc môi trường có endpoint `/api/config`.
+
+Luồng chạy phù hợp:
+
+1. Cung cấp endpoint `GET /api/config`
+2. Mở `dashboard/index.html`
+3. Dashboard sẽ tự import `dashboard/js/app.js`
+
+Nếu Firebase chưa được cấu hình đúng, dashboard sẽ tự chuyển sang mock mode.
+
+### 2. Firmware ESP32
+
+Mở folder `firmware/main/` bằng Arduino IDE và nạp sketch `main.ino`.
+
+Trước khi nạp:
+
+- Copy `firmware/config.example.h` thành `firmware/main/config.h` nếu cần dùng template
+- Điền Wi-Fi, Firebase và các thông tin định danh thật của dự án
+- Cài đúng board ESP32 trong Arduino IDE
+- Cài các thư viện Arduino mà code đang dùng
+
+## Cấu hình firmware
+
+File `firmware/main/config.h` là file cấu hình cục bộ. Không nên đẩy thông tin thật lên repo công khai.
+
+Các giá trị thường cần cấu hình:
+
+```cpp
+#define WIFI_SSID     "your_wifi"
+#define WIFI_PASS     "your_password"
+#define FIREBASE_URL  "https://your-project.firebaseio.com"
+#define FIREBASE_KEY  "your_api_key"
+#define SECURITY_PIN  "123456"
+#define RFID_UID      "4362F506"
+```
+
+## Cấu hình dashboard
+
+Dashboard đọc biến runtime từ `window.__SMARTHOME_ENV__`, được nạp qua endpoint `/api/config`.
+
+Nếu chưa có config thật, file `dashboard/env.js` sẽ dùng giá trị mặc định và bật mock mode.
+
+## Cách hoạt động của dashboard
+
+### Home
+
+- Hiển thị nhiệt độ, độ sáng, độ ẩm, chất lượng không khí
+- Cho phép bật/tắt relay qua Firebase
+
+### Schedule
+
+- Quản lý lịch bật/tắt cho `ch1` và `ch3`
+- Chỉ cho bật lịch khi ESP32 đã đồng bộ NTP
+- Hỗ trợ lịch chạy qua đêm
+
+### Security
+
+- Theo dõi trạng thái `motion_detected`
+- Điều khiển `alarm_status`
+- Chọn chế độ bảo vệ: `always`, `night_only`, `disabled`
+
+### Logs
+
+- Đọc log từ `/access_logs`
+- Hỗ trợ đọc thêm node legacy `/access_log` nếu có dữ liệu cũ
+- Có nút xoá toàn bộ log đang hiển thị
+
+### RFID Manager
+
+- Danh sách thẻ chờ duyệt
+- Thẻ đã duyệt
+- Thẻ bị từ chối
+- Thẻ đã xoá
+
+Các thao tác hỗ trợ:
+
+- Duyệt thẻ
+- Từ chối thẻ
+- Khoá/mở khoá
+- Khôi phục
+- Xoá vĩnh viễn
+
+## Giao tiếp phần cứng
+
+Từ code hiện tại:
+
+- ESP32 kết nối Firebase qua `FirebaseESP32`
+- ESP32 dùng `Serial2` để giao tiếp với UNO extension
+- RFID RC522 được đọc trực tiếp trên ESP32
+- PIR kích hoạt cảnh báo theo mode an ninh
+- Relay được đồng bộ hai chiều giữa firmware và dashboard
+
+Các chân phần cứng cụ thể nên xem trực tiếp trong source của từng module vì có thể thay đổi theo phiên bản phần cứng.
+
+## Ghi chú kỹ thuật
+
+- Code dùng `millis()` để tránh blocking thay vì lạm dụng `delay()`
+- Lịch tự động phụ thuộc vào trạng thái đồng bộ thời gian
+- Khi mất NTP, lịch sẽ tạm dừng
+- Khi Firebase chưa cấu hình đúng, dashboard vẫn chạy ở mock mode để demo UI và luồng thao tác
+
+## Khuyến nghị khi phát triển
+
+- Giữ cấu trúc node Firebase ổn định giữa firmware và dashboard
+- Nếu đổi tên node, sửa đồng thời cả firmware và dashboard
+- Test luồng RFID, schedule và logs sau mỗi thay đổi lớn
+- Không lưu secret thật trực tiếp trong repo nếu dự án được chia sẻ công khai
+
+## Các file nên đọc trước khi sửa
+
+- [`firmware/main/main.ino`](firmware/main/main.ino)
+- [`firmware/main/network.ino`](firmware/main/network.ino)
+- [`firmware/main/security.ino`](firmware/main/security.ino)
+- [`dashboard/js/app.js`](dashboard/js/app.js)
+- [`dashboard/js/core/firebase.js`](dashboard/js/core/firebase.js)
+- [`dashboard/index.html`](dashboard/index.html)
+
