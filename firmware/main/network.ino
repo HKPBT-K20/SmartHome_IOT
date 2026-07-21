@@ -1,4 +1,4 @@
-// Báº£o: WiFi, Firebase Realtime Database
+// Bảo: WiFi, Firebase Realtime Database
 #include <WiFi.h>
 #include <FirebaseESP32.h>
 #include <vector>
@@ -6,14 +6,14 @@
 #include "config.h"
 #include "types.h"
 
-// â”€â”€ FIREBASE OBJECTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── FIREBASE OBJECTS ──────────────────────────────────────────
 FirebaseData   fbdo;
 FirebaseAuth   auth;
 FirebaseConfig fbConfig;
 
 static bool firebaseReady = false;
 
-// CÃ¡c biáº¿n nÃ y Ä‘Æ°á»£c Ä‘á»‹nh nghÄ©a trong security.ino
+// Các biến này được định nghĩa trong security.ino
 extern AccessLog lastLog;
 extern bool      newLogAvailable;
 extern bool      relayState[4];
@@ -208,7 +208,7 @@ static void pushTimeSyncStatus(bool synced) {
   }
 }
 
-// â”€â”€ SETUP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── SETUP ─────────────────────────────────────────────────────
 void setupFirebase() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASS);
@@ -270,7 +270,7 @@ void pushAirQuality() {
     Serial.println("Air quality push error: " + fbdo.errorReason());
   }
 
-  if (airVal > 600) {
+  if (airVal > 1200) {
     extern void alertBuzzer(int beeps);
     alertBuzzer(5);
   }
@@ -311,12 +311,12 @@ void pushSensors() {
   }
 }
 
-// â”€â”€ PUSH ACCESS LOG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Gá»i ngay khi newLogAvailable == true
+// ── PUSH ACCESS LOG ───────────────────────────────────────────
+// Gọi ngay khi newLogAvailable == true
 void pushAccessLog() {
   if (!newLogAvailable) return;
 
-  // Reset cá» trÆ°á»›c Ä‘á»ƒ khÃ´ng gá»i láº¡i náº¿u Firebase lá»—i
+  // Reset cờ trước để không gọi lại nếu Firebase lỗi
   newLogAvailable = false;
 
   if (!firebaseReady || !Firebase.ready()) return;
@@ -361,8 +361,8 @@ void pushUnoOnlineStatus(bool online) {
   }
 }
 
-// â”€â”€ LISTEN COMMANDS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Gá»i má»—i 5 giÃ¢y â€” poll relay manual, security mode, vÃ  lá»‹ch tá»± Ä‘á»™ng
+// ── LISTEN COMMANDS ───────────────────────────────────────────
+// Gọi mỗi 5 giây — poll relay manual, security mode, và lịch tự động
 void listenCommands() {
   if (!firebaseReady || !Firebase.ready()) return;
 
@@ -411,8 +411,8 @@ void listenCommands() {
   }
 }
 
-// â”€â”€ PUSH RELAY STATE' â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Sync tráº¡ng thÃ¡i relay lÃªn /relay/ch1|ch2 Ä‘á»ƒ dashboard Ä‘á»c Ä‘Æ°á»£c
+// ── PUSH RELAY STATE ──────────────────────────────────────────
+// Sync trạng thái relay lên /relay/ch1|ch2 để dashboard đọc được
 void pushRelayState(int ch, bool on) {
   if (!firebaseReady || !Firebase.ready()) return;
   if (ch == 1) {
@@ -422,13 +422,13 @@ void pushRelayState(int ch, bool on) {
   }
 }
 
-// â”€â”€ PUSH SECURITY ALARM STATUS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── PUSH SECURITY ALARM STATUS ────────────────────────────────
 void pushSecurityAlarm(bool active) {
   if (!firebaseReady || !Firebase.ready()) return;
   Firebase.setBool(fbdo, "/security/alarm_status", active);
 }
 
-// â”€â”€ RFID SELF-REGISTRATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── RFID SELF-REGISTRATION ────────────────────────────────────
 
 void pushPendingCard(String uid) {
   if (!firebaseReady || !Firebase.ready()) return;
@@ -486,7 +486,7 @@ void pushLocalCards() {
   for (int i = 0; i < uidCount; i++) {
     String path = "/local_cards/" + validUIDs[i];
     FirebaseJson json;
-    json.set("label", "Tháº» máº·c Ä‘á»‹nh");
+    json.set("label", "Thẻ mặc định");
     json.set("source", "firmware");
     Firebase.setJSON(fbdo, path, json);
   }
@@ -506,7 +506,7 @@ void syncAuthorizedCards() {
   if (!firebaseReady || !Firebase.ready()) return;
 
   if (!Firebase.getJSON(fbdo, "/authorized_cards")) {
-    // Node chÆ°a tá»“n táº¡i = chÆ°a cÃ³ tháº» nÃ o Ä‘Æ°á»£c duyá»‡t â€” khÃ´ng pháº£i lá»—i tháº­t
+    // Node chưa tồn tại = chưa có thẻ nào được duyệt — không phải lỗi thật
     const String& reason = fbdo.errorReason();
     if (reason.indexOf("not exist") < 0 && reason.indexOf("path not found") < 0) {
       Serial.println("[Sync] authorized_cards error: " + reason);
@@ -516,8 +516,8 @@ void syncAuthorizedCards() {
     return;
   }
 
-  // Collect keys trÆ°á»›c khi gá»i báº¥t ká»³ Firebase operation nÃ o khÃ¡c
-  // (má»—i Firebase call overwrite fbdo.jsonObject())
+  // Collect keys trước khi gọi bất kỳ Firebase operation nào khác
+  // (mỗi Firebase call overwrite fbdo.jsonObject())
   FirebaseJson& json = fbdo.jsonObject();
   size_t count = json.iteratorBegin();
 
@@ -546,7 +546,7 @@ void syncAuthorizedCards() {
         String label = labelData.success ? labelData.stringValue : "";
         label.trim();
         if (label.length() == 0) {
-          label = "Tháº» " + key.substring(max(0, (int)key.length() - 4));
+          label = "Thẻ " + key.substring(max(0, (int)key.length() - 4));
         }
         fetchedLabels.push_back(label);
       }
@@ -556,24 +556,24 @@ void syncAuthorizedCards() {
 
   authorizedUIDs = fetched;
   authorizedCardLabels = fetchedLabels;
-  Serial.println("[Sync] " + String(authorizedUIDs.size()) + " authorized UIDs loaded (" + String(skipped) + " skipped â€” locked/deleted)");
+  Serial.println("[Sync] " + String(authorizedUIDs.size()) + " authorized UIDs loaded (" + String(skipped) + " skipped — locked/deleted)");
 }
 
 void checkRevokedCards() {
   if (!firebaseReady || !Firebase.ready()) return;
-  // Fast-path: náº¿u khÃ´ng cÃ³ gÃ¬ trong vector thÃ¬ bá» qua luÃ´n
-  // Váº«n pháº£i check Firebase vÃ¬ cÃ³ thá»ƒ card Ä‘Æ°á»£c add xong bá»‹ revoke trÆ°á»›c láº§n sync Ä‘áº§u tiÃªn
+  // Fast-path: nếu không có gì trong vector thì bỏ qua luôn
+  // Vẫn phải check Firebase vì có thể card được add xong bị revoke trước lần sync đầu tiên
 
   if (!Firebase.getJSON(fbdo, "/revoked_cards")) {
-    // Node khÃ´ng tá»“n táº¡i = khÃ´ng cÃ³ revocation nÃ o Ä‘ang pending
+    // Node không tồn tại = không có revocation nào đang pending
     return;
   }
 
   FirebaseJson& json = fbdo.jsonObject();
   size_t count = json.iteratorBegin();
 
-  // Collect táº¥t cáº£ UID bá»‹ thu há»“i trÆ°á»›c khi gá»i deleteNode
-  // (deleteNode sáº½ overwrite fbdo)
+  // Collect tất cả UID bị thu hồi trước khi gọi deleteNode
+  // (deleteNode sẽ overwrite fbdo)
   std::vector<String> toRevoke;
   for (size_t i = 0; i < count; i++) {
     String key, value;
@@ -588,7 +588,7 @@ void checkRevokedCards() {
   if (toRevoke.empty()) return;
 
   for (const String& uid : toRevoke) {
-    // XÃ³a khá»i authorizedUIDs vector ngay láº­p tá»©c
+    // Xóa khỏi authorizedUIDs vector ngay lập tức
     auto it = std::find(authorizedUIDs.begin(), authorizedUIDs.end(), uid);
     if (it != authorizedUIDs.end()) {
       size_t index = (size_t)std::distance(authorizedUIDs.begin(), it);
@@ -596,9 +596,9 @@ void checkRevokedCards() {
       if (index < authorizedCardLabels.size()) {
         authorizedCardLabels.erase(authorizedCardLabels.begin() + index);
       }
-      Serial.println("[Revoke] Removed " + uid + " from authorized list â€” access denied immediately");
+      Serial.println("[Revoke] Removed " + uid + " from authorized list — access denied immediately");
     }
-    // XÃ³a node /revoked_cards/{uid} sau khi Ä‘Ã£ xá»­ lÃ½
+    // Xóa node /revoked_cards/{uid} sau khi đã xử lý
     Firebase.deleteNode(fbdo, "/revoked_cards/" + uid);
   }
 }

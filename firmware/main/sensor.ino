@@ -12,7 +12,7 @@
 #define DHT_PIN  27
 #define DHT_TYPE  DHT11
 #define IR_REMOTE_PIN 13
-
+#define LIGHT_SENSOR_PIN 34
 DHT dht(DHT_PIN, DHT_TYPE);
 IRrecv irrecv(IR_REMOTE_PIN);
 decode_results irResults;
@@ -48,6 +48,8 @@ void setupSensors() {
   analogReadResolution(12);
   dht.begin();
   irrecv.enableIRIn();
+    analogReadResolution(12);
+    pinMode(LIGHT_SENSOR_PIN, INPUT);
   Serial.println("Sensor module ready.");
 }
 
@@ -60,7 +62,7 @@ float readTemperature() {
 }
 
 int readLightLevel() {
-  return currentLightLevel;
+  return analogRead(LIGHT_SENSOR_PIN);
 }
 
 // =====================================================
@@ -124,7 +126,7 @@ void getTimeString(char *buffer) {
 int readAirQualityPPM() {
   int raw = analogRead(35);
   float voltage = raw * (3.3f / 4095.0f);
-  float ppm = (voltage / 3.3f) * 1600.0f;
+  float ppm = 400.0f + (voltage / 3.3f) * 1600.0f;
   if (ppm < 350.0f) ppm = 350.0f;
   if (ppm > 2000.0f) ppm = 2000.0f;
   return (int)ppm;
