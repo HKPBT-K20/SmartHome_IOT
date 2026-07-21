@@ -98,8 +98,10 @@ void checkRFID() {
   if (granted) {
     Serial.println("[RFID] UID: " + uid + " -> GRANTED");
     fillAccessLog("RFID", "RFID", uid.c_str(), true);
+     Serial2.println("ACCESS_GRANTED");
     openDoor();
   } else {
+     Serial2.println("ACCESS_DENIED");
     // Thẻ lạ — kiểm tra trạng thái trên Firebase
     String cardStatus = getCardStatus(uid);
     if (cardStatus == "rejected") {

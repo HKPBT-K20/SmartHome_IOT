@@ -5,6 +5,9 @@
 bool changePasswordMode = false;
 bool waitingOldPassword = false;
 bool waitingNewPassword = false;
+int failedAttempts = 0;
+bool locked = false;
+unsigned long lockUntil = 0;
 
 String specialBuffer = "";
 #define PIN_LENGTH 6
@@ -295,7 +298,30 @@ void setup() {
 
 void loop() {
   char key = keypad.getKey();
-  
+  if (Serial.available()) {
+      String msg = Serial.readStringUntil('\n');
+      msg.trim();
+
+      if (msg == "ACCESS_GRANTED") {
+          failedAttempts = 0;
+          printLine1("Access Granted");
+          printLine2("");
+      }
+      else if (msg == "ACCESS_DENIED") {
+          failedAttempts++;
+
+          printLine1("Access Denied");
+          printLine2("Attempt " + String(failedAttempts));
+
+          if (failedAttempts >= 3) {
+              locked = true;
+              lockUntil = millis() + 30000;
+
+              printLine1("System Locked");
+              printLine2("30 Seconds");
+          }
+      }
+  }
 
 if (key) {
 
@@ -400,4 +426,5 @@ if (key) {
   }
 
 
+  
 }
