@@ -9,6 +9,44 @@ import {
 } from "../core/firebase.js";
 import { showToast } from "../core/ui.js";
 
+let lastMotionDetected = null;
+let motionAlertTimer = null;
+
+function hideMotionAlert() {
+    const modal = document.getElementById("motion-alert-modal");
+    if (!modal) return;
+
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+
+    if (motionAlertTimer) {
+        clearTimeout(motionAlertTimer);
+        motionAlertTimer = null;
+    }
+}
+
+function showMotionAlert() {
+    const modal = document.getElementById("motion-alert-modal");
+    const title = document.getElementById("motion-alert-title");
+    const message = document.getElementById("motion-alert-message");
+
+    if (!modal) return;
+
+    if (title) title.innerText = "Phát hiện chuyển động";
+    if (message) message.innerText = "Cảm biến PIR vừa ghi nhận chuyển động bất thường. Hệ thống đang theo dõi.";
+
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+
+    if (motionAlertTimer) {
+        clearTimeout(motionAlertTimer);
+    }
+
+    motionAlertTimer = setTimeout(() => {
+        hideMotionAlert();
+    }, 4500);
+}
+
 function renderSecurityUi(security) {
     const divMotionBg = document.getElementById("div-motion-bg");
     const iconMotion = document.getElementById("icon-motion");
@@ -32,33 +70,35 @@ function renderSecurityUi(security) {
     if (divMotionBg) {
         if (motionDetected) {
             divMotionBg.className = isLightTheme
-                ? "p-4 rounded-3xl bg-sky-500/10 flex items-center gap-4 border border-sky-300/60 animate-pulse"
+                ? "p-4 rounded-3xl bg-rose-50/95 flex items-center gap-4 border border-rose-300/70 animate-pulse shadow-[0_16px_30px_rgba(248,113,113,0.12)]"
                 : "p-4 rounded-3xl bg-rose-500/15 flex items-center gap-4 border border-rose-500/30 animate-pulse";
         } else {
             divMotionBg.className = isLightTheme
-                ? "p-4 rounded-3xl bg-white/90 flex items-center gap-4 border border-slate-200/90"
+                ? "p-4 rounded-3xl bg-slate-100/95 flex items-center gap-4 border border-slate-300/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]"
                 : "p-4 rounded-3xl bg-slate-900/70 flex items-center gap-4 border border-slate-700/60";
         }
     }
+
     if (iconMotion) {
         iconMotion.className = motionDetected
             ? isLightTheme
-                ? "text-2xl text-sky-500"
+                ? "text-2xl text-rose-500"
                 : "text-2xl text-rose-400"
             : isLightTheme
-                ? "text-2xl text-slate-500"
+                ? "text-2xl text-slate-600"
                 : "text-2xl text-slate-400";
     }
+
     if (lblMotionStatus) {
         lblMotionStatus.innerText = motionDetected
             ? "Có chuyển động - PIR đang kích hoạt"
             : "Không phát hiện chuyển động";
         lblMotionStatus.className = motionDetected
             ? isLightTheme
-                ? "font-bold text-sky-700"
+                ? "font-bold text-rose-700"
                 : "font-bold text-rose-300"
             : isLightTheme
-                ? "text-sm text-slate-600"
+                ? "text-sm text-slate-700"
                 : "text-sm text-slate-400";
     }
 
@@ -75,6 +115,7 @@ function renderSecurityUi(security) {
         }
         btnToggleAlarm.dataset.active = alarmActive ? "true" : "false";
     }
+
     if (lblAlarmStatus) {
         lblAlarmStatus.innerText = motionDetected
             ? "Còi đang xử lý cảnh báo chuyển động"
@@ -83,7 +124,7 @@ function renderSecurityUi(security) {
                 : "Hệ thống còi hú: Bình thường";
         lblAlarmStatus.className = motionDetected
             ? isLightTheme
-                ? "text-xs text-sky-700 font-semibold mt-1 animate-pulse"
+                ? "text-xs text-rose-700 font-semibold mt-1 animate-pulse"
                 : "text-xs text-rose-300 font-semibold mt-1 animate-pulse"
             : alarmActive
                 ? isLightTheme
@@ -93,6 +134,7 @@ function renderSecurityUi(security) {
                     ? "text-xs text-slate-500 mt-1"
                     : "text-xs text-slate-500 mt-1";
     }
+
     btnClearAlarm?.classList.toggle("hidden", !alarmActive);
 
     const checkedRadio = document.querySelector(`input[name="security-mode"][value="${mode}"]`);
@@ -103,6 +145,14 @@ function renderSecurityUi(security) {
     const demoBadge = document.getElementById("security-demo-badge");
     demoBadge?.classList.toggle("hidden", !USE_MOCK_DEMO);
     btnSaveSecurityMode && (btnSaveSecurityMode.disabled = false);
+
+    if (lastMotionDetected === false && motionDetected) {
+        showMotionAlert();
+    } else if (lastMotionDetected !== null && !motionDetected) {
+        hideMotionAlert();
+    }
+
+    lastMotionDetected = motionDetected;
 }
 
 async function writeSecurity(nextSecurity) {
@@ -119,6 +169,8 @@ export function initSecurityFeature() {
     const btnClearAlarm = document.getElementById("btn-clear-alarm");
     const btnToggleAlarm = document.getElementById("btn-toggle-alarm");
     const btnSaveSecurityMode = document.getElementById("btn-save-security-mode");
+    const motionAlertModal = document.getElementById("motion-alert-modal");
+    const motionAlertClose = document.getElementById("motion-alert-close");
 
     if (btnToggleAlarm) {
         btnToggleAlarm.dataset.active = "false";
@@ -181,6 +233,18 @@ export function initSecurityFeature() {
         } catch (error) {
             console.error("Không thể đổi trạng thái còi báo động:", error);
             showToast("Không đổi được trạng thái còi", "Kiểm tra lại dữ liệu cục bộ.", "error");
+        }
+    });
+
+    motionAlertClose?.addEventListener("click", hideMotionAlert);
+    motionAlertModal?.addEventListener("click", event => {
+        if (event.target === motionAlertModal) {
+            hideMotionAlert();
+        }
+    });
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+            hideMotionAlert();
         }
     });
 }

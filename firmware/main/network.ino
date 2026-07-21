@@ -19,6 +19,7 @@ extern bool      newLogAvailable;
 extern bool      relayState[4];
 extern char      securityMode[16];
 extern std::vector<String> authorizedUIDs;
+static std::vector<String> authorizedCardLabels;
 void pushRelayState(int ch, bool on);
 
 static RelayScheduleConfig relaySchedules[4] = {
@@ -61,7 +62,7 @@ static bool getCurrentMinutesOfDay(int &minutesOfDay) {
     return true;
   }
 
-  minutesOfDay = (millis() / 60000UL) % 1440;
+  minutesOfDay = -1;
   return false;
 }
 
@@ -103,6 +104,8 @@ static void syncSecurityMode() {
 
 static bool scheduleActivePeriod[4] = {false, false, false, false};
 static int  scheduleSkipDay[4] = {-1, -1, -1, -1};
+static bool lastTimeSyncStatus = false;
+static bool lastTimeSyncStatusInitialized = false;
 
 static int getCurrentDayOfYear() {
   struct tm t;
@@ -115,6 +118,7 @@ static int getCurrentDayOfYear() {
 static void syncScheduleChannel(int ch, int minutesOfDay) {
   if (!firebaseReady || !Firebase.ready()) return;
   if (ch != 1 && ch != 3) return;
+  if (!timeSynced) return;
 
   char path[40];
   bool enabled = false;
@@ -178,6 +182,32 @@ static void syncScheduleChannel(int ch, int minutesOfDay) {
   }
 }
 
+static void pauseScheduleRelaysDueToTimeLoss() {
+  for (int ch : {1, 3}) {
+    if (scheduleActivePeriod[ch]) {
+      setRelay(ch, false);
+      pushRelayState(ch, false);
+      scheduleActivePeriod[ch] = false;
+    }
+  }
+}
+
+static void pushTimeSyncStatus(bool synced) {
+  if (!firebaseReady || !Firebase.ready()) return;
+  if (lastTimeSyncStatusInitialized && lastTimeSyncStatus == synced) {
+    return;
+  }
+
+  lastTimeSyncStatus = synced;
+  lastTimeSyncStatusInitialized = true;
+
+  if (Firebase.setBool(fbdo, "/system/time_synced", synced)) {
+    Serial.println(String("[Time] Sync status pushed: ") + (synced ? "true" : "false"));
+  } else {
+    Serial.println("Time sync push error: " + fbdo.errorReason());
+  }
+}
+
 // ── SETUP ─────────────────────────────────────────────────────
 void setupFirebase() {
   WiFi.mode(WIFI_STA);
@@ -187,7 +217,7 @@ void setupFirebase() {
   unsigned long start = millis();
   while (WiFi.status() != WL_CONNECTED) {
     if (millis() - start > 15000) {
-      Serial.println("\nWiFi timeout — check SSID/password in config.h");
+      Serial.println("\nWiFi timeout - check SSID/password in config.h");
       return;
     }
     delay(500);
@@ -195,58 +225,22 @@ void setupFirebase() {
   }
   Serial.println("\nWiFi connected: " + WiFi.localIP().toString());
 
-  // NTP là nguồn thời gian ưu tiên — SSL cần notBefore/notAfter hợp lệ
   configTime(7 * 3600, 0, "time.google.com", "pool.ntp.org");
   delay(2000);
 
   struct tm t;
-  if (getLocalTime(&t) && t.tm_year > 120) {
+  timeSynced = getLocalTime(&t) && t.tm_year > 120;
+  if (timeSynced) {
     Serial.printf("NTP synced: %04d-%02d-%02d %02d:%02d:%02d\n",
       t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
       t.tm_hour, t.tm_min, t.tm_sec);
-
   } else {
-    // Fallback 1: compile-time — đủ dùng cho dev/test, đúng trong vài phút sau Upload
-    Serial.println("NTP unavailable — using compile-time fallback (DEV ONLY)");
-    
-    int year = 0, day = 0, hour = 0, min = 0, sec = 0;
-    char monthName[4] = {0};
-    const char monthNames[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
-    sscanf(__DATE__, "%s %d %d", monthName, &day, &year);
-    sscanf(__TIME__, "%d:%d:%d", &hour, &min, &sec);
-
-    int month = 0;
-    for (int i = 0; i < 12; i++) {
-      if (strncmp(&monthNames[i * 3], monthName, 3) == 0) {
-        month = i;
-        break;
-      }
-    }
-
-    struct tm compileTm;
-    compileTm.tm_year = year - 1900;
-    compileTm.tm_mon = month;
-    compileTm.tm_mday = day;
-    compileTm.tm_hour = hour;
-    compileTm.tm_min = min;
-    compileTm.tm_sec = sec;
-    compileTm.tm_isdst = -1;
-
-    time_t utc = mktime(&compileTm) - 7UL * 3600UL; // GMT+7 local → UTC
-    struct timeval tv = { utc, 0 };
-    settimeofday(&tv, nullptr);
-
-    // Xác nhận lại
-    getLocalTime(&t);
-    Serial.printf("Compile-time set: %04d-%02d-%02d %02d:%02d:%02d (GMT+7)\n",
-      t.tm_year + 1900, t.tm_mon + 1, t.tm_mday,
-      t.tm_hour, t.tm_min, t.tm_sec);
+    Serial.println("NTP unavailable - schedules paused until time sync succeeds");
   }
-
 
   fbConfig.database_url               = FIREBASE_URL;
   fbConfig.signer.tokens.legacy_token = FIREBASE_KEY;
-  fbConfig.timeout.socketConnection   = 1500; // Giới hạn timeout 1.5s để tránh block loop khi SSL lỗi
+  fbConfig.timeout.socketConnection   = 1500;
 
   Serial.printf("[Debug] Free Heap before Firebase: %u bytes\n", ESP.getFreeHeap());
 
@@ -259,6 +253,7 @@ void setupFirebase() {
   pushRelayState(3, relayState[3]);
   pushSecurityMotion(false);
   pushSecurityAlarm(false);
+  pushTimeSyncStatus(timeSynced);
   pushLocalCards();
   syncAuthorizedCards();
   Serial.println("Firebase ready");
@@ -275,7 +270,7 @@ void pushAirQuality() {
     Serial.println("Air quality push error: " + fbdo.errorReason());
   }
 
-  if (airVal > 600) {
+  if (airVal > 1200) {
     extern void alertBuzzer(int beeps);
     alertBuzzer(5);
   }
@@ -400,12 +395,23 @@ void listenCommands() {
   }
 
   int minutesOfDay = 0;
-  getCurrentMinutesOfDay(minutesOfDay);
-  syncScheduleChannel(1, minutesOfDay);
-  syncScheduleChannel(3, minutesOfDay);
+  bool syncedNow = getCurrentMinutesOfDay(minutesOfDay);
+  if (syncedNow != timeSynced) {
+    timeSynced = syncedNow;
+    pushTimeSyncStatus(timeSynced);
+    if (!timeSynced) {
+      pauseScheduleRelaysDueToTimeLoss();
+      Serial.println("Schedule paused: time is not synchronized.");
+    }
+  }
+
+  if (timeSynced) {
+    syncScheduleChannel(1, minutesOfDay);
+    syncScheduleChannel(3, minutesOfDay);
+  }
 }
 
-// ── PUSH RELAY STATE ─────────────────────────────────────────
+// ── PUSH RELAY STATE ──────────────────────────────────────────
 // Sync trạng thái relay lên /relay/ch1|ch2 để dashboard đọc được
 void pushRelayState(int ch, bool on) {
   if (!firebaseReady || !Firebase.ready()) return;
@@ -416,7 +422,7 @@ void pushRelayState(int ch, bool on) {
   }
 }
 
-// ── PUSH SECURITY ALARM STATUS ───────────────────────────────
+// ── PUSH SECURITY ALARM STATUS ────────────────────────────────
 void pushSecurityAlarm(bool active) {
   if (!firebaseReady || !Firebase.ready()) return;
   Firebase.setBool(fbdo, "/security/alarm_status", active);
@@ -487,6 +493,15 @@ void pushLocalCards() {
   Serial.println("[Local] Pushed " + String(uidCount) + " local UIDs to Firebase");
 }
 
+String getAuthorizedCardLabel(const String &uid) {
+  for (size_t i = 0; i < authorizedUIDs.size() && i < authorizedCardLabels.size(); i++) {
+    if (authorizedUIDs[i] == uid) {
+      return authorizedCardLabels[i];
+    }
+  }
+  return "";
+}
+
 void syncAuthorizedCards() {
   if (!firebaseReady || !Firebase.ready()) return;
 
@@ -497,6 +512,7 @@ void syncAuthorizedCards() {
       Serial.println("[Sync] authorized_cards error: " + reason);
     }
     authorizedUIDs.clear();
+    authorizedCardLabels.clear();
     return;
   }
 
@@ -506,6 +522,7 @@ void syncAuthorizedCards() {
   size_t count = json.iteratorBegin();
 
   std::vector<String> fetched;
+  std::vector<String> fetchedLabels;
   int skipped = 0;
   for (size_t i = 0; i < count && (int)fetched.size() < 20; i++) {
     String key, value;
@@ -514,9 +531,10 @@ void syncAuthorizedCards() {
     if (key.length() > 0) {
       FirebaseJson childJson;
       childJson.setJsonData(value);
-      FirebaseJsonData lockedData, deletedData;
+      FirebaseJsonData lockedData, deletedData, labelData;
       childJson.get(lockedData, "locked");
       childJson.get(deletedData, "deleted");
+      childJson.get(labelData, "label");
 
       bool isLocked = lockedData.success && lockedData.boolValue;
       bool isDeleted = deletedData.success && deletedData.boolValue;
@@ -525,12 +543,19 @@ void syncAuthorizedCards() {
         skipped++;
       } else {
         fetched.push_back(key);
+        String label = labelData.success ? labelData.stringValue : "";
+        label.trim();
+        if (label.length() == 0) {
+          label = "Thẻ " + key.substring(max(0, (int)key.length() - 4));
+        }
+        fetchedLabels.push_back(label);
       }
     }
   }
   json.iteratorEnd();
 
   authorizedUIDs = fetched;
+  authorizedCardLabels = fetchedLabels;
   Serial.println("[Sync] " + String(authorizedUIDs.size()) + " authorized UIDs loaded (" + String(skipped) + " skipped — locked/deleted)");
 }
 
@@ -566,7 +591,11 @@ void checkRevokedCards() {
     // Xóa khỏi authorizedUIDs vector ngay lập tức
     auto it = std::find(authorizedUIDs.begin(), authorizedUIDs.end(), uid);
     if (it != authorizedUIDs.end()) {
+      size_t index = (size_t)std::distance(authorizedUIDs.begin(), it);
       authorizedUIDs.erase(it);
+      if (index < authorizedCardLabels.size()) {
+        authorizedCardLabels.erase(authorizedCardLabels.begin() + index);
+      }
       Serial.println("[Revoke] Removed " + uid + " from authorized list — access denied immediately");
     }
     // Xóa node /revoked_cards/{uid} sau khi đã xử lý

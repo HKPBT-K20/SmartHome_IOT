@@ -13,12 +13,37 @@
 #define DHT_TYPE  DHT11
 #define IR_REMOTE_PIN 13
 
+#define LIGHT_SENSOR_PIN 34
 DHT dht(DHT_PIN, DHT_TYPE);
 IRrecv irrecv(IR_REMOTE_PIN);
 decode_results irResults;
 
 int currentHour = 0;
 int currentLightLevel = 500;
+bool timeSynced = false;
+
+// Một số remote NEC phổ biến: nút 1 và 2.
+// Nếu remote của bạn khác mã, xem Serial để lấy raw code rồi đổi ở đây.
+static const uint32_t IR_KEY_1_RAW = 0x00FF30CF;
+static const uint32_t IR_KEY_2_RAW = 0x00FF18E7;
+
+static void handleIRKey(uint32_t rawValue) {
+  extern void setRelay(int ch, bool on);
+  extern void pushRelayState(int ch, bool on);
+  extern bool relayState[4];
+
+  if (rawValue == IR_KEY_1_RAW) {
+    bool nextState = !relayState[3];
+    setRelay(3, nextState);
+    pushRelayState(3, nextState);
+    Serial.printf("IR key 1 -> living room relay CH3 %s\n", nextState ? "ON" : "OFF");
+  } else if (rawValue == IR_KEY_2_RAW) {
+    bool nextState = !relayState[1];
+    setRelay(1, nextState);
+    pushRelayState(1, nextState);
+    Serial.printf("IR key 2 -> working room relay CH1 %s\n", nextState ? "ON" : "OFF");
+  }
+}
 
 static const uint32_t IR_KEY_1_RAW = 0x00FF30CF;
 static const uint32_t IR_KEY_2_RAW = 0x00FF18E7;
@@ -52,6 +77,8 @@ void setupSensors() {
   analogReadResolution(12);
   dht.begin();
   irrecv.enableIRIn();
+    analogReadResolution(12);
+    pinMode(LIGHT_SENSOR_PIN, INPUT);
   Serial.println("Sensor module ready.");
 }
 
@@ -64,7 +91,7 @@ float readTemperature() {
 }
 
 int readLightLevel() {
-  return currentLightLevel;
+  return analogRead(LIGHT_SENSOR_PIN);
 }
 
 // =====================================================
@@ -98,9 +125,10 @@ void updateTime() {
   struct tm t;
   if (getLocalTime(&t) && t.tm_year > 120) {
     currentHour = t.tm_hour;
+    timeSynced = true;
   } else {
-    unsigned long totalSeconds = millis() / 1000;
-    currentHour = (totalSeconds / 3600) % 24;
+    currentHour = -1;
+    timeSynced = false;
   }
 }
 
@@ -127,7 +155,7 @@ void getTimeString(char *buffer) {
 int readAirQualityPPM() {
   int raw = analogRead(35);
   float voltage = raw * (3.3f / 4095.0f);
-  float ppm = (voltage / 3.3f) * 1600.0f;
+  float ppm = 400.0f + (voltage / 3.3f) * 1600.0f;
   if (ppm < 350.0f) ppm = 350.0f;
   if (ppm > 2000.0f) ppm = 2000.0f;
   return (int)ppm;

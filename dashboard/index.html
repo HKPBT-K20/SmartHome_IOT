@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 
 <head>
@@ -191,12 +191,17 @@
         }
 
         body.light-theme #div-motion-bg {
-            background: rgba(255, 255, 255, 0.94) !important;
-            border-color: rgba(148, 163, 184, 0.38) !important;
+            background: linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(241, 245, 249, 0.96)) !important;
+            border-color: rgba(148, 163, 184, 0.5) !important;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 10px 24px rgba(15, 23, 42, 0.06);
         }
 
         body.light-theme #lbl-motion-status {
             color: #0f172a !important;
+        }
+
+        body.light-theme #icon-motion {
+            color: #475569 !important;
         }
 
         body.light-theme #lbl-alarm-status {
@@ -246,8 +251,9 @@
         }
 
         body.light-theme .security-alert-active #div-motion-bg {
-            background: rgba(254, 242, 242, 0.95) !important;
-            border-color: rgba(248, 113, 113, 0.45) !important;
+            background: linear-gradient(180deg, rgba(255, 241, 242, 0.98), rgba(254, 226, 226, 0.96)) !important;
+            border-color: rgba(248, 113, 113, 0.55) !important;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78), 0 16px 34px rgba(248, 113, 113, 0.14) !important;
         }
 
         body.light-theme #btn-clear-alarm {
@@ -602,6 +608,12 @@
                         <p class="text-sm text-slate-400 mb-6">Nhập giờ bật và giờ tắt cho 2 đèn, hệ thống sẽ tự hiểu
                             lịch trong ngày hoặc lịch qua đêm.</p>
 
+                        <div id="schedule-time-sync-banner"
+                            class="hidden mb-5 rounded-3xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+                            <i class="fa-solid fa-triangle-exclamation mr-2 text-amber-300"></i>
+                            <span id="schedule-time-sync-text">ESP32 chưa đồng bộ NTP, lịch hẹn giờ sẽ tạm dừng.</span>
+                        </div>
+
                         <div class="space-y-4 md:space-y-6">
                             <div
                                 class="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4 items-end p-4 glass-panel rounded-3xl border border-slate-700/50">
@@ -744,21 +756,21 @@
                 </div>
 
                 <div id="page-rfid" class="page-content space-y-4 hidden">
-                    <!-- Ô 1 — Thẻ được cấp quyền (Rose/Red theme) -->
+                    <!-- Ô 1 — Thẻ được cấp quyền (Emerald/Green theme) -->
                     <div
-                        class="accordion-item panel-card rounded-[28px] border border-rose-500/30 overflow-hidden shadow-[0_20px_45px_rgba(15,23,42,0.2)]">
-                        <div class="accordion-header flex items-center justify-between p-5 cursor-pointer bg-rose-500/10 hover:bg-rose-500/15 transition"
+                        class="accordion-item panel-card rounded-[28px] border border-emerald-500/30 overflow-hidden shadow-[0_20px_45px_rgba(15,23,42,0.2)]">
+                        <div class="accordion-header flex items-center justify-between p-5 cursor-pointer bg-emerald-500/10 hover:bg-emerald-500/15 transition"
                             data-panel="1">
                             <div class="flex items-center gap-3">
                                 <div
-                                    class="w-10 h-10 rounded-2xl bg-rose-500/20 border border-rose-400/30 flex items-center justify-center text-rose-300 text-lg">
-                                    <i class="fa-solid fa-shield-check"></i>
+                                    class="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-600 text-lg">
+                                    <i class="fa-solid fa-circle-check"></i>
                                 </div>
                                 <div>
                                     <h3 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
                                         Thẻ được cấp quyền
                                         <span id="panel1-count"
-                                            class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-400/30">--</span>
+                                            class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-700 border border-emerald-400/30">--</span>
                                     </h3>
                                     <p class="text-xs text-slate-400">Danh sách thẻ đang được phép ra/vào hệ thống</p>
                                 </div>
@@ -773,7 +785,7 @@
                                     class="fa-solid fa-chevron-down text-slate-400 transition-transform duration-300"></i>
                             </div>
                         </div>
-                        <div id="panel1-body" class="hidden border-t border-rose-500/20 p-4 md:p-6 space-y-3 ">
+                        <div id="panel1-body" class="hidden border-t border-emerald-500/20 p-4 md:p-6 space-y-3 ">
                             <div id="panel1-list" class="space-y-3">
                                 <div class="text-center py-6 text-slate-500 text-sm">Nhấp vào để tải danh sách thẻ...
                                 </div>
@@ -855,21 +867,21 @@
                         </div>
                     </div>
 
-                    <!-- Ô 4 — Thẻ bị xoá (Teal/Slate theme) -->
+                    <!-- Ô 4 — Thẻ bị xoá (Rose/Red theme) -->
                     <div
-                        class="accordion-item panel-card rounded-[28px] border border-teal-500/30 overflow-hidden shadow-[0_20px_45px_rgba(15,23,42,0.2)]">
-                        <div class="accordion-header flex items-center justify-between p-5 cursor-pointer bg-teal-500/10 hover:bg-teal-500/15 transition"
+                        class="accordion-item panel-card rounded-[28px] border border-rose-500/30 overflow-hidden shadow-[0_20px_45px_rgba(15,23,42,0.2)]">
+                        <div class="accordion-header flex items-center justify-between p-5 cursor-pointer bg-rose-500/10 hover:bg-rose-500/15 transition"
                             data-panel="4">
                             <div class="flex items-center gap-3">
                                 <div
-                                    class="w-10 h-10 rounded-2xl bg-teal-500/20 border border-teal-400/30 flex items-center justify-center text-teal-300 text-lg">
+                                    class="w-10 h-10 rounded-2xl bg-rose-500/20 border border-rose-400/30 flex items-center justify-center text-rose-600 text-lg">
                                     <i class="fa-solid fa-trash-can"></i>
                                 </div>
                                 <div>
                                     <h3 class="text-base md:text-lg font-bold text-white flex items-center gap-2">
                                         Thẻ bị xoá
                                         <span id="panel4-count"
-                                            class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-500/20 text-teal-300 border border-teal-400/30">--</span>
+                                            class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/20 text-rose-700 border border-rose-400/30">--</span>
                                     </h3>
                                     <p class="text-xs text-slate-400">Danh sách thẻ đã xoá khỏi hệ thống, có thể khôi
                                         phục</p>
@@ -885,7 +897,7 @@
                                     class="fa-solid fa-chevron-down text-slate-400 transition-transform duration-300"></i>
                             </div>
                         </div>
-                        <div id="panel4-body" class="hidden border-t border-teal-500/20 p-4 md:p-6 space-y-3 ">
+                        <div id="panel4-body" class="hidden border-t border-rose-500/20 p-4 md:p-6 space-y-3 ">
                             <div id="panel4-list" class="space-y-3">
                                 <div class="text-center py-6 text-slate-500 text-sm">Nhấp vào để tải danh sách thẻ...
                                 </div>
@@ -950,6 +962,30 @@
                 <button id="confirm-modal-ok"
                     class="px-4 py-2 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-semibold transition">Xác
                     nhận</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="motion-alert-modal"
+        class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-950/70 backdrop-blur-md px-4">
+        <div id="motion-alert-card"
+            class="w-full max-w-md rounded-[30px] border border-rose-400/30 bg-white/95 p-6 shadow-2xl shadow-rose-950/30">
+            <div class="flex items-start gap-4">
+                <div
+                    class="mt-1 flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-500/15 border border-rose-500/20 text-rose-500 text-xl">
+                    <i class="fa-solid fa-person-running"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-rose-500">Cảnh báo an ninh</p>
+                    <h3 id="motion-alert-title" class="mt-1 text-2xl font-bold text-slate-900">Phát hiện chuyển động</h3>
+                    <p id="motion-alert-message" class="mt-2 text-sm text-slate-600">Cảm biến PIR vừa ghi nhận chuyển động bất thường.</p>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end">
+                <button id="motion-alert-close"
+                    class="rounded-2xl bg-rose-600 px-4 py-2 font-semibold text-white transition hover:bg-rose-500">
+                    Đã hiểu
+                </button>
             </div>
         </div>
     </div>

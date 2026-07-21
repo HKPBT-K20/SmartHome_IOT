@@ -20,6 +20,9 @@ const LABELS = {
     ch3: "Đèn phòng khách"
 };
 
+let timeSyncReady = true;
+const scheduleCache = { ch1: null, ch3: null };
+
 function getScheduleElements(ch) {
     return {
         timeOnInput: document.getElementById(`time-on-${ch}`),
@@ -31,11 +34,28 @@ function getScheduleElements(ch) {
     };
 }
 
+function renderTimeSyncBanner(isSynced) {
+    timeSyncReady = Boolean(isSynced);
+    const banner = document.getElementById("schedule-time-sync-banner");
+    const text = document.getElementById("schedule-time-sync-text");
+
+    if (!banner) return;
+
+    banner.classList.toggle("hidden", timeSyncReady);
+    if (text) {
+        text.innerText = timeSyncReady
+            ? "ESP32 đã đồng bộ NTP, lịch hẹn giờ đang hoạt động."
+            : "ESP32 chưa đồng bộ NTP, lịch hẹn giờ sẽ tạm dừng.";
+    }
+}
+
 function renderScheduleUi(ch, schedule) {
     const { timeOnInput, timeOffInput, toggleBtn, saveBtn, statusLabel, summaryLabel } = getScheduleElements(ch);
     if (!timeOnInput || !timeOffInput || !toggleBtn || !saveBtn || !statusLabel || !summaryLabel) {
         return;
     }
+
+    scheduleCache[ch] = schedule || null;
 
     const state = buildScheduleState(schedule);
     timeOnInput.value = state.onTime;
@@ -69,13 +89,20 @@ function renderScheduleUi(ch, schedule) {
         summaryLabel.innerText = "Cần nhập đủ 2 mốc giờ hợp lệ.";
     }
 
+    if (!timeSyncReady) {
+        statusLabel.innerText = "Chưa đồng bộ NTP · lịch đang tạm dừng";
+        statusLabel.className = "text-xs text-amber-300 font-medium block";
+    }
+
     toggleBtn.innerText = state.enabled ? "Tắt hẹn giờ" : "Bật hẹn giờ";
     toggleBtn.dataset.enabled = state.enabled ? "true" : "false";
-    toggleBtn.disabled = !state.hasConfig;
+    toggleBtn.disabled = !state.hasConfig || (!timeSyncReady && !state.enabled);
     toggleBtn.className = state.enabled
         ? "px-3 py-1.5 bg-sky-600/25 text-sky-300 border border-sky-500/30 rounded-2xl transition text-sm"
         : state.hasConfig
-            ? "px-3 py-1.5 bg-slate-800 text-slate-300 rounded-2xl transition text-sm hover:bg-slate-700"
+            ? (!timeSyncReady
+                ? "px-3 py-1.5 bg-amber-500/15 text-amber-300 border border-amber-500/30 rounded-2xl transition text-sm cursor-not-allowed opacity-80"
+                : "px-3 py-1.5 bg-slate-800 text-slate-300 rounded-2xl transition text-sm hover:bg-slate-700")
             : "px-3 py-1.5 bg-slate-800 text-slate-500 rounded-2xl transition text-sm cursor-not-allowed opacity-60";
     saveBtn.disabled = false;
 }
@@ -133,6 +160,11 @@ function bindScheduleActions(ch) {
         const onTime = timeOnInput.value.trim();
         const offTime = timeOffInput.value.trim();
 
+        if (nextEnabled && !timeSyncReady) {
+            showToast("Chưa đồng bộ NTP", "ESP32 chưa có giờ thật nên lịch không thể bật. Hãy chờ đồng bộ thời gian rồi bật lại.", "error");
+            return;
+        }
+
         if (nextEnabled && (!isValidTime(onTime) || !isValidTime(offTime) || onTime === offTime)) {
             showToast("Không thể bật hẹn giờ", "Cần lưu một khung giờ hợp lệ trước khi bật.", "warning");
             return;
@@ -179,12 +211,25 @@ export function initScheduleFeature() {
 
     if (USE_MOCK_DEMO) {
         const schedules = getMockSchedules();
-        CHANNELS.forEach(ch => renderScheduleUi(ch, schedules[ch] || null));
+        CHANNELS.forEach(ch => {
+            scheduleCache[ch] = schedules[ch] || null;
+            renderScheduleUi(ch, scheduleCache[ch]);
+        });
+        renderTimeSyncBanner(true);
         return;
     }
 
+    onValue(ref(db, "system/time_synced"), snapshot => {
+        const synced = snapshot.val() === true;
+        renderTimeSyncBanner(synced);
+        CHANNELS.forEach(ch => renderScheduleUi(ch, scheduleCache[ch]));
+    });
+
     onValue(ref(db, "schedules"), snapshot => {
         const schedules = snapshot.val() || {};
-        CHANNELS.forEach(ch => renderScheduleUi(ch, schedules[ch] || null));
+        CHANNELS.forEach(ch => {
+            scheduleCache[ch] = schedules[ch] || null;
+            renderScheduleUi(ch, scheduleCache[ch]);
+        });
     });
 }

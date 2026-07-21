@@ -43,5 +43,7 @@ void getTimeString(char *buffer);
 void pushSecurityMotion(bool detected);
 void pushSecurityAlarm(bool active);
 void updateIRRemote();
+String getAuthorizedCardLabel(const String &uid);
+extern bool timeSynced;
 
 #endif // TYPES_H
