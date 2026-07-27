@@ -9,11 +9,12 @@
 // Pin Definitions
 // =====================================================
 
-#define DHT_PIN  27
-#define DHT_TYPE  DHT11
+#define DHT_PIN 27
+#define DHT_TYPE DHT11
 #define IR_REMOTE_PIN 13
 
 #define LIGHT_SENSOR_PIN 34
+
 DHT dht(DHT_PIN, DHT_TYPE);
 IRrecv irrecv(IR_REMOTE_PIN);
 decode_results irResults;
@@ -27,35 +28,16 @@ bool timeSynced = false;
 static const uint32_t IR_KEY_1_RAW = 0x00FF30CF;
 static const uint32_t IR_KEY_2_RAW = 0x00FF18E7;
 
-static void handleIRKey(uint32_t rawValue) {
-  extern void setRelay(int ch, bool on);
-  extern void pushRelayState(int ch, bool on);
-  extern bool relayState[4];
-
-  if (rawValue == IR_KEY_1_RAW) {
-    bool nextState = !relayState[3];
-    setRelay(3, nextState);
-    pushRelayState(3, nextState);
-    Serial.printf("IR key 1 -> living room relay CH3 %s\n", nextState ? "ON" : "OFF");
-  } else if (rawValue == IR_KEY_2_RAW) {
-    bool nextState = !relayState[1];
-    setRelay(1, nextState);
-    pushRelayState(1, nextState);
-    Serial.printf("IR key 2 -> working room relay CH1 %s\n", nextState ? "ON" : "OFF");
-  }
-}
-
-static const uint32_t IR_KEY_1_RAW = 0x00FF30CF;
-static const uint32_t IR_KEY_2_RAW = 0x00FF18E7;
-
 static void handleIRRemoteKey(uint32_t rawValue) {
   extern bool relayState[4];
   extern void setRelay(int ch, bool on);
   extern void pushRelayState(int ch, bool on);
+  extern void pushRelayCommand(int ch, bool on);
 
   if (rawValue == IR_KEY_1_RAW) {
     bool nextState = !relayState[3];
     setRelay(3, nextState);
+    pushRelayCommand(3, nextState);
     pushRelayState(3, nextState);
     Serial.printf("IR key 1 -> living room relay CH3 %s\n", nextState ? "ON" : "OFF");
     return;
@@ -64,6 +46,7 @@ static void handleIRRemoteKey(uint32_t rawValue) {
   if (rawValue == IR_KEY_2_RAW) {
     bool nextState = !relayState[1];
     setRelay(1, nextState);
+    pushRelayCommand(1, nextState);
     pushRelayState(1, nextState);
     Serial.printf("IR key 2 -> working room relay CH1 %s\n", nextState ? "ON" : "OFF");
     return;
@@ -77,12 +60,9 @@ void setupSensors() {
   analogReadResolution(12);
   dht.begin();
   irrecv.enableIRIn();
-    analogReadResolution(12);
-    pinMode(LIGHT_SENSOR_PIN, INPUT);
+  pinMode(LIGHT_SENSOR_PIN, INPUT);
   Serial.println("Sensor module ready.");
 }
-
-
 
 float readTemperature() {
   float t = dht.readTemperature();
@@ -145,7 +125,7 @@ void getTimeString(char *buffer) {
             t.tm_mday, t.tm_mon + 1, t.tm_year % 100);
   } else {
     unsigned long totalSeconds = millis() / 1000;
-    int hours   = (totalSeconds / 3600) % 24;
+    int hours = (totalSeconds / 3600) % 24;
     int minutes = (totalSeconds / 60) % 60;
     int seconds = totalSeconds % 60;
     sprintf(buffer, "%02d:%02d:%02d 01/07/26", hours, minutes, seconds);

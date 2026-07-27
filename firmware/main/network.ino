@@ -21,6 +21,7 @@ extern char      securityMode[16];
 extern std::vector<String> authorizedUIDs;
 static std::vector<String> authorizedCardLabels;
 void pushRelayState(int ch, bool on);
+void pushRelayCommand(int ch, bool on);
 
 static RelayScheduleConfig relaySchedules[4] = {
   {{0}, {0}, false, false},
@@ -28,6 +29,15 @@ static RelayScheduleConfig relaySchedules[4] = {
   {{0}, {0}, false, false},
   {{0}, {0}, false, false}
 };
+
+void pushRelayCommand(int ch, bool on) {
+  if (!firebaseReady || !Firebase.ready()) return;
+  if (ch == 1) {
+    Firebase.setBool(fbdo, "/commands/relay_1", on);
+  } else if (ch == 3) {
+    Firebase.setBool(fbdo, "/commands/relay_3", on);
+  }
+}
 
 static bool copyFirebaseString(const char* path, char* out, size_t outSize) {
   if (!Firebase.getString(fbdo, path)) {

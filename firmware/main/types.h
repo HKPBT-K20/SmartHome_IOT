@@ -35,6 +35,7 @@ void closeDoor();
 void alertBuzzer(int beeps = 3);
 void stopBuzzer();
 void setRelay(int ch, bool on);
+void pushRelayCommand(int ch, bool on);
 float readTemperature();
 int readLightLevel();
 bool readHumidity(float &humidity);
