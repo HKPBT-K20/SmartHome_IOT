@@ -25,8 +25,9 @@ void setupActuator() {
   pinMode(RELAY_1, OUTPUT);
   pinMode(RELAY_2, OUTPUT);
 
-  digitalWrite(RELAY_1, LOW);
-  digitalWrite(RELAY_2, LOW);
+  // Relay active-low: HIGH = tắt, LOW = bật
+  digitalWrite(RELAY_1, HIGH);
+  digitalWrite(RELAY_2, HIGH);
   relayState[1] = false;
   relayState[3] = false;
 
@@ -65,7 +66,8 @@ void setRelay(int ch, bool on) {
   int pins[] = {0, RELAY_1, 0, RELAY_2};
   if (ch != 1 && ch != 3) return;
   if (relayState[ch] == on) return;
-  digitalWrite(pins[ch], on ? HIGH : LOW);
+  // Relay active-low: LOW = ON, HIGH = OFF
+  digitalWrite(pins[ch], on ? LOW : HIGH);
   relayState[ch] = on;
   Serial.println("Relay " + String(ch) + ": " + (on ? "ON" : "OFF"));
 }
