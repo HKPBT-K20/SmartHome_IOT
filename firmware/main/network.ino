@@ -378,12 +378,13 @@ void listenCommands() {
 
   bool val;
 
-  if (Firebase.getBool(fbdo, "/commands/relay_1", &val)) {
+  // Đồng bộ theo đúng path dashboard/IR đang dùng
+  if (Firebase.getBool(fbdo, "/relay/ch1", &val)) {
     setRelay(1, val);
     pushRelayState(1, val);
   }
 
-  if (Firebase.getBool(fbdo, "/commands/relay_3", &val)) {
+  if (Firebase.getBool(fbdo, "/relay/ch3", &val)) {
     setRelay(3, val);
     pushRelayState(3, val);
   }
@@ -422,7 +423,7 @@ void listenCommands() {
 }
 
 // ── PUSH RELAY STATE ──────────────────────────────────────────
-// Sync trạng thái relay lên /relay/ch1|ch2 để dashboard đọc được
+// Sync trạng thái relay lên /relay/ch1|ch3 để dashboard đọc được
 void pushRelayState(int ch, bool on) {
   if (!firebaseReady || !Firebase.ready()) return;
   if (ch == 1) {
